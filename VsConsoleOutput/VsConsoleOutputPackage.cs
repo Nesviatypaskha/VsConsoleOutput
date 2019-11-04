@@ -37,6 +37,7 @@ namespace VsConsoleOutput
         /// VsConsoleOutputPackage GUID string.
         /// </summary>
         public const string PackageGuidString = "f6dfad00-7979-4fd7-b28b-71336c51f20f";
+        private static IVsDebugger _debugger;
 
         private static DTE2 _dte2;
 
@@ -54,6 +55,7 @@ namespace VsConsoleOutput
             // When initialized asynchronously, the current thread may be a background thread at this point.
             // Do any initialization that requires the UI thread after switching to the UI thread.
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            DebuggerEventsMonitor.Instance.Advise();
         }
         public static DTE2 getDTE2()
         {
@@ -62,6 +64,29 @@ namespace VsConsoleOutput
             return _dte2;
         }
 
+        public static IVsDebugger getDebugger()
+        {
+            if (_debugger == null)
+                _debugger = GetGlobalService(typeof(SVsShellDebugger)) as IVsDebugger;
+            return _debugger;
+        }
+
+        protected override int QueryClose(out bool canClose)
+        {
+            int hr = VSConstants.S_OK;
+            canClose = true;
+            try
+            {
+                DebuggerEventsMonitor.Instance.Unadvise();
+                hr = base.QueryClose(out canClose);
+                Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(hr);
+            }
+            catch (Exception ex)
+            {
+                // TODO: catch
+            }
+            return hr;
+        }
         #endregion
     }
 }

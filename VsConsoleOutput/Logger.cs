@@ -34,20 +34,34 @@ namespace VsConsoleOutput
 
         public static void Log(string message)
         {
-            if (_loggerPane == null)
-                Logger.Initialize();
-            if (string.IsNullOrEmpty(message))
-                return;
-            OutputString(DateTime.Now.ToString() + ": " + message + Environment.NewLine);
+            try
+            {
+                if (_loggerPane == null)
+                    Logger.Initialize();
+                if (string.IsNullOrEmpty(message))
+                    return;
+                OutputString(DateTime.Now.ToString() + ": " + message + Environment.NewLine);
+            }
+            catch
+            {
+                // TODO: Add catch
+            }
         }
 
         public static void Log(string format, params object[] args)
         {
-            if (_loggerPane == null)
-                Logger.Initialize();
-            if (string.IsNullOrEmpty(format))
-                return;
-            OutputString(DateTime.Now.ToString() + ": " + string.Format(format, args) + Environment.NewLine);
+            try
+            { 
+                if (_loggerPane == null)
+                    Logger.Initialize();
+                if (string.IsNullOrEmpty(format))
+                    return;
+                OutputString(DateTime.Now.ToString() + ": " + string.Format(format, args) + Environment.NewLine);
+            }
+            catch
+            {
+                // TODO: Add catch
+            }
         }
 
         private static void OutputString(string text)
