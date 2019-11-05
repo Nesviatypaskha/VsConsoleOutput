@@ -63,23 +63,23 @@ namespace VsConsoleOutput
             switch (mode)
             {
                 case DBGMODE.DBGMODE_Break:
-                    Logger.Log("DBGMODE_Break");
+                    Output.Log("DBGMODE_Break");
                     break;
                 case DBGMODE.DBGMODE_Design:
-                    Logger.Log("DBGMODE_Design");
+                    Output.Log("DBGMODE_Design");
                     break;
                 case DBGMODE.DBGMODE_Enc:
-                    Logger.Log("DBGMODE_Enc");
+                    Output.Log("DBGMODE_Enc");
                     break;
                 case DBGMODE.DBGMODE_EncMask:
-                    Logger.Log("DBGMODE_EncMask");
+                    Output.Log("DBGMODE_EncMask");
                     break;
                 case DBGMODE.DBGMODE_Run:
-                    Logger.Log("DBGMODE_Run");
+                    Output.Log("DBGMODE_Run");
                     GetFullInfo();
                     break;
                 default:
-                    Logger.Log("DBGMODE --- UNKNOWN");
+                    Output.Log("DBGMODE --- UNKNOWN");
                     break;
             };
             return VSConstants.S_OK;
@@ -94,16 +94,16 @@ namespace VsConsoleOutput
             // ResturtDebug only in debug mode!!!
             if (solutionConfiguration2.Name == "Debug")
             {
-                Logger.Log("------ SolutionConfiguration: Debug ------");
+                Output.Log("------ SolutionConfiguration: Debug ------");
                 foreach (String s in (Array)solutionBuild2.StartupProjects)
                 {
-                    Logger.Log("------------ StartupProjects --------------");
-                    Logger.Log(s);
+                    Output.Log("------------ StartupProjects --------------");
+                    Output.Log(s);
                     foreach (Process2 process in debugger2.DebuggedProcesses)
                     {
                         string fileName = Path.GetFileName(process.Name);
-                        Logger.Log("DebuggedProcesses : {0}", fileName);
-                        Logger.Log("IsBeingDebugged : {0}", process.IsBeingDebugged);
+                        Output.Log("DebuggedProcesses : {0}", fileName);
+                        Output.Log("IsBeingDebugged : {0}", process.IsBeingDebugged);
                     }
                 }
 

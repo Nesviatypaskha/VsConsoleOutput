@@ -46,7 +46,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="DebuggerEventsMonitor.cs" />
-    <Compile Include="Logger.cs" />
+    <Compile Include="Output.cs" />
+    <Compile Include="DebugProcessVS.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VsConsoleOutputPackage.cs" />
   </ItemGroup>
