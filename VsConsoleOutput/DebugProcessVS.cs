@@ -10,6 +10,9 @@ using System.Threading.Tasks;
 
 namespace VsConsoleOutput
 {
+
+    // TODO: DebugSetProcessKillOnExit
+
     internal class DebugProcessVS
     {
         public static DTE2 dte;
@@ -19,6 +22,12 @@ namespace VsConsoleOutput
         {
             try
             {
+                if (debuggedProcess != null)
+                {
+                    Output.Log("Old debuggedProcess killed {0}", debuggedProcess.Id);
+                    debuggedProcess.Kill();
+                }
+
                 if (!File.Exists(exePath))
                 {
                     Output.Log("Executable not found: {0}", exePath);
@@ -30,32 +39,34 @@ namespace VsConsoleOutput
                     this.debuggedProcess = new System.Diagnostics.Process();
                     this.debuggedProcess.StartInfo.FileName = exePath;
                     this.debuggedProcess.StartInfo.WorkingDirectory = workDir;
-                    this.debuggedProcess.StartInfo.Arguments = args.Trim();
-                    this.debuggedProcess.Exited += new EventHandler(this.Process_Exited);
-                    this.debuggedProcess.EnableRaisingEvents = true;
-                    this.debuggedProcess.StartInfo.UseShellExecute = true;
-                    this.debuggedProcess.StartInfo.RedirectStandardOutput = true;
-                    this.debuggedProcess.StartInfo.RedirectStandardError = true;
-                    this.debuggedProcess.StartInfo.RedirectStandardInput = true;
+                    //this.debuggedProcess.StartInfo.Arguments = args.Trim();
+                    //this.debuggedProcess.EnableRaisingEvents = true;
+                    //this.debuggedProcess.StartInfo.UseShellExecute = true;
+                    //this.debuggedProcess.StartInfo.RedirectStandardOutput = true;
+                    //this.debuggedProcess.StartInfo.RedirectStandardError = true;
+                    //this.debuggedProcess.StartInfo.RedirectStandardInput = true;
                     // TODO: StandardOutputEncoding
 
                     this.debuggedProcess.StartInfo.CreateNoWindow = true;
+                    this.debuggedProcess.Exited += new EventHandler(this.Process_Exited);
                     this.debuggedProcess.OutputDataReceived += new DataReceivedEventHandler(this.StandardOutputReceiver);
                     this.debuggedProcess.ErrorDataReceived += new DataReceivedEventHandler(this.StandardErrorReceiver);
                     //this.debuggedProcess.ErrorDataReceived += new DataReceivedEventHandler(this.StandardErrorReceiver);
                     //WriteToStandardInput(debuggedProcess);
                     // https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.datareceivedeventhandler?view=netframework-4.8
                     // https://stackoverflow.com/questions/7850352/how-can-i-copy-the-stdout-of-a-process-copy-not-redirect
-
-                    // TODO: set duplicate http://vsokovikov.narod.ru/New_MSDN_API/Handles_objects/fn_duplicatehandle.htm
-                    // http://vsokovikov.narod.ru/New_MSDN_API/Process_thread/child_process_redirect_io.htm
-                    
-                    this.debuggedProcess.Start();
-
-                    this.debuggedProcess.BeginOutputReadLine();
-                    this.debuggedProcess.BeginErrorReadLine();
-
-                    Output.Log("Started file: {0}" + this.debuggedProcess.StartInfo.FileName);
+                    bool started = false;
+                    started = this.debuggedProcess.Start();
+                    if (started)
+                    {
+                        this.debuggedProcess.BeginOutputReadLine();
+                        this.debuggedProcess.BeginErrorReadLine();
+                        Output.Log("Started file: {0}" + this.debuggedProcess.StartInfo.FileName);
+                    }
+                    else
+                    {
+                        Output.Log("NOT STARTED file: {0}" + this.debuggedProcess.StartInfo.FileName);
+                    }
                 }
             }
             catch (Exception ex)
@@ -73,6 +84,20 @@ namespace VsConsoleOutput
             catch (Exception ex)
             {
                 Output.Log("EXCEPTION: within Process_Exited:  {0} {1}", debuggedProcess.ProcessName, ex.ToString());
+            }
+        }
+        public void CloseProcess()
+        {
+            try
+            {
+                if (this.debuggedProcess == null)
+                    return;
+                Output.Log("Closing process {0}" + this.debuggedProcess.ProcessName);
+                this.debuggedProcess.Close();
+            }
+            catch (Exception ex)
+            {
+                Output.Log("EXCEPTION: within Closing process:  {0} {1}", debuggedProcess.ProcessName, ex.ToString());
             }
         }
         public void KillProcess()

@@ -122,7 +122,7 @@ namespace VsConsoleOutput
         {
             try
             {
-                if (_loggerPane == null)
+                if (_consolePane == null)
                     Output.Initialize();
                 if (string.IsNullOrEmpty(message))
                     return;
@@ -138,7 +138,7 @@ namespace VsConsoleOutput
         {
             try
             {
-                if (_loggerPane == null)
+                if (_consolePane == null)
                     Output.Initialize();
                 if (string.IsNullOrEmpty(format))
                     return;
@@ -154,12 +154,12 @@ namespace VsConsoleOutput
         {
             // TODO add timer System.Timer
             ThreadHelper.ThrowIfNotOnUIThread("VSoutput.Logger.OutputStringConsole");
-            if (_loggerPane != null)
+            if (_consolePane != null)
             {
                 try
                 {
-                    _loggerPane.Activate();
-                    _loggerPane.OutputString(text);
+                    _consolePane.Activate();
+                    _consolePane.OutputString(text);
                 }
                 catch (Exception)
                 {
