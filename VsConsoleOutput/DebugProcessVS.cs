@@ -12,6 +12,8 @@ namespace VsConsoleOutput
 {
 
     // TODO: DebugSetProcessKillOnExit
+    // https://docs.microsoft.com/ru-ru/windows/console/reading-input-buffer-events
+    // 
 
     internal class DebugProcessVS
     {
@@ -39,11 +41,12 @@ namespace VsConsoleOutput
                     this.debuggedProcess = new System.Diagnostics.Process();
                     this.debuggedProcess.StartInfo.FileName = exePath;
                     this.debuggedProcess.StartInfo.WorkingDirectory = workDir;
-                    //this.debuggedProcess.StartInfo.Arguments = args.Trim();
-                    //this.debuggedProcess.EnableRaisingEvents = true;
-                    //this.debuggedProcess.StartInfo.UseShellExecute = true;
-                    //this.debuggedProcess.StartInfo.RedirectStandardOutput = true;
-                    //this.debuggedProcess.StartInfo.RedirectStandardError = true;
+                    this.debuggedProcess.StartInfo.Arguments = args.Trim();
+                    this.debuggedProcess.EnableRaisingEvents = true;
+                    this.debuggedProcess.StartInfo.UseShellExecute = false;
+                    //this.debuggedProcess.StartInfo.ErrorDialog = false;
+                    this.debuggedProcess.StartInfo.RedirectStandardOutput = true;
+                    this.debuggedProcess.StartInfo.RedirectStandardError = true;
                     //this.debuggedProcess.StartInfo.RedirectStandardInput = true;
                     // TODO: StandardOutputEncoding
 
@@ -55,6 +58,7 @@ namespace VsConsoleOutput
                     //WriteToStandardInput(debuggedProcess);
                     // https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.datareceivedeventhandler?view=netframework-4.8
                     // https://stackoverflow.com/questions/7850352/how-can-i-copy-the-stdout-of-a-process-copy-not-redirect
+                    // http://vsokovikov.narod.ru/New_MSDN_API/Process_thread/child_process_redirect_io.htm
                     bool started = false;
                     started = this.debuggedProcess.Start();
                     if (started)
@@ -62,11 +66,15 @@ namespace VsConsoleOutput
                         this.debuggedProcess.BeginOutputReadLine();
                         this.debuggedProcess.BeginErrorReadLine();
                         Output.Log("Started file: {0}" + this.debuggedProcess.StartInfo.FileName);
+                        Attach(debuggedProcess);
                     }
                     else
                     {
                         Output.Log("NOT STARTED file: {0}" + this.debuggedProcess.StartInfo.FileName);
                     }
+
+                    // TODO: duplicate 
+                    //StreamReader outputStream = debuggedProcess.StandardOutput;
                 }
             }
             catch (Exception ex)
@@ -126,5 +134,57 @@ namespace VsConsoleOutput
                 return;
             Output.Console("Error >{0}", errLine.Data);
         }
+
+        public static void Attach(System.Diagnostics.Process process, int maxTries = 5)
+        {
+            if (dte == null)
+            {
+                Output.Log("No debugger found, nothing attached...");
+                return;
+            }
+
+            // Try loop - visual studio may not respond the first time.
+            // We also don't want it to stall the main thread
+            new System.Threading.Thread(() =>
+            {
+                while (maxTries-- > 0)
+                {
+                    try
+                    {
+                        Processes processes = dte.Debugger.LocalProcesses;
+                        foreach (EnvDTE.Process proc in processes)
+                        {
+                            try
+                            {
+                                if (proc.Name.Contains(process.ProcessName))
+                                {
+                                    proc.Attach();
+                                    Output.Log("Attatched to process {0} successfully.", process.ProcessName);
+                                    return;
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+                    // Wait for debugger and application and debugger to find application
+                    System.Threading.Thread.Sleep(1500);
+                }
+            }).Start();
+        }
+
+        //https://gitter.im/Microsoft/VSProjectSystem/archives/2017/09/27?at=59cb8d6f177fb9fe7e0b15cb
+        //public override async Task<IReadOnlyList<IDebugLaunchSettings>> QueryDebugTargetsAsync(DebugLaunchOptions launchOptions)
+        //{
+        //    var settings = new DebugLaunchSettings(launchOptions);
+
+        //    // The properties that are available via DebuggerProperties are determined by the property XAML files in your project.
+        //    settings.Executable = @"C:\Users\Igal\AppData\Roaming\scriptcs\scriptcs.exe";
+
+        //    settings.Arguments = @"D:\code\ScriptCSApp5\ScriptCSApp5\app.csx";
+        //    settings.LaunchOperation = DebugLaunchOperation.CreateProcess;
+
+        //    return new IDebugLaunchSettings[] { settings };
+        //}
     }
 }

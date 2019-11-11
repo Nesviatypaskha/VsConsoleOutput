@@ -160,13 +160,6 @@ namespace VsConsoleOutput
             Output.Log("--- GetFullInfo END -----------------------");
         }
 
-        private void StandardOutputReceiver(object sendingProcess, DataReceivedEventArgs outLine)
-        {
-            if (string.IsNullOrEmpty(outLine.Data))
-                return;
-            Output.Log("Output>{0}", outLine.Data);
-            Output.Console("Output>{0}", outLine.Data);
-        }
         public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program,
                             IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
         {
@@ -210,6 +203,7 @@ namespace VsConsoleOutput
             else if ((debugEvent is IDebugSessionDestroyEvent2) || (riidEvent.ToString("B") == "f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"))
             {
                 isAttached = false;
+                _debugProcess.KillProcess();
                 Output.Log("debugEvent is IDebugSessionDestroyEvent2"); //"IDebugSessionDestroyEvent2","f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"
             }
                 
@@ -254,18 +248,49 @@ namespace VsConsoleOutput
                 //TODO: PROCESS_INFO
                 var info = new PROCESS_INFO[1];
                 process.GetInfo(enum_PROCESS_INFO_FIELDS.PIF_ALL, info);
+                Output.Log("------------------------------------------------");
+                Output.Log("--- Parrent pid = {0}", info[0].ProcessId.dwProcessId);
+                Output.Log("------------------------------------------------");
+
 
                 
+                //EnvDTE90.Debugger3 debugger = (EnvDTE90.Debugger3)dte.Debugger;
+                //EnvDTE.Processes processes = debugger.DebuggedProcesses;
+                //if (processes.Count == 0)
+                //    owp.OutputString("No processes are being debugged.");
+                //else
+                //    foreach (EnvDTE.Process proc in processes)
+                //        owp.OutputString("\nProcess: [" + proc.ProcessID + "] " +
+                //                         proc.Name);
 
-                //string commandLine = GetCommandLine((System.Diagnostics.Process)process);
-                //process.Detach();
-                //process.Terminate();
+                DTE2 dte2 = VsConsoleOutputPackage.getDTE2();
+                Debugger2 debugger2 = dte2.Debugger as Debugger2;
+                EnvDTE90.Debugger3 debugger3 = (EnvDTE90.Debugger3)dte2.Debugger;
+                EnvDTE.Processes processes = debugger3.DebuggedProcesses;
+
+                //foreach (EnvDTE.Process dte_process in processes)
+                //{
+                //    if (dte_process.ProcessID == info[0].ProcessId.dwProcessId)
+                //    {
+                //        dte_process.Terminate(true);
+                //        foreach (EnvDTE.Program dte_program in dte_process.Programs)
+                //        {
+                //            dte_program.Process.Terminate(true);
+                //        }
+                //    }
+                //}
+
                 if (_debugProcess == null)
                 {
                     _debugProcess = new DebugProcessVS();
 
                 }
                 _debugProcess.StartProcess(process_FILENAME, "", "");
+
+
+                process.Detach();
+                process.Terminate();
+
                 //foreach (EnvDTE.Process process in processes)
                 //{
                 //    process.Terminate(true);
@@ -334,11 +359,6 @@ namespace VsConsoleOutput
 
             // https://stackoverflow.com/questions/15582736/how-to-set-break-on-all-exceptions-from-a-package
 
-            //        process.OutputDataReceived += new System.Diagnostics.
-            //          DataReceivedEventHandler(StandardOutputReceiver);
-            //        process.ErrorDataReceived += new System.Diagnostics.
-            //            DataReceivedEventHandler(StandardErrorReceiver);
-
 
             Debugger2 _dbg = _dte2.Debugger as Debugger2;
             //TODO: redirect ONLY if Console present
@@ -387,6 +407,7 @@ namespace VsConsoleOutput
 
 
             //Processes : IEnumerable
+            
             foreach (Process2 process in _dbg.DebuggedProcesses)
             {
                 //_dbg.Stop();

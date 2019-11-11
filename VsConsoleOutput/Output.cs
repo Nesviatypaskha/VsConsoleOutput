@@ -34,6 +34,7 @@ namespace VsConsoleOutput
 #endif
                     if (_consolePane == null)
                     {
+                        // TODO add pane with GUID)))  {204E2A26-7BD7-4632-8043-18D94C179103}
                         _consolePane = dte.ToolWindows.OutputWindow.OutputWindowPanes.Add("Console");
                         _consolePane.Activate();
                         _consolePane.Clear();
@@ -153,7 +154,7 @@ namespace VsConsoleOutput
         private static void OutputStringConsole(string text)
         {
             // TODO add timer System.Timer
-            ThreadHelper.ThrowIfNotOnUIThread("VSoutput.Logger.OutputStringConsole");
+            //ThreadHelper.ThrowIfNotOnUIThread("VSoutput.Logger.OutputStringConsole");
             if (_consolePane != null)
             {
                 try
