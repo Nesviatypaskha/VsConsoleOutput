@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.VisualStudio.Shell.Interop;
 
-using VSConstants = Microsoft.VisualStudio.VSConstants;;
+using VSConstants = Microsoft.VisualStudio.VSConstants;
 
 namespace VsConsoleOutput
 {
@@ -25,6 +25,11 @@ namespace VsConsoleOutput
         {
             paneList.Remove(rguidPane);
             return VSConstants.S_OK;
+        }
+
+        public int GetPane(ref Guid rguidPane, out IVsOutputWindowPane ppPane)
+        {
+            throw new NotImplementedException();
         }
 
         //public int GetPane(ref Guid rguidPane, out IVsOutputWindowPane ppPane)

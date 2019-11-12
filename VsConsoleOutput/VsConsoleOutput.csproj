@@ -51,6 +51,7 @@
     <Compile Include="DebugProcessVS.cs" />
     <Compile Include="OutputWindowService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Slava.cs" />
     <Compile Include="VsConsoleOutputPackage.cs" />
   </ItemGroup>
   <ItemGroup>

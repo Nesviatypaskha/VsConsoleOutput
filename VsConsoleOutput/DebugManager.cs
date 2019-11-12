@@ -164,6 +164,12 @@ namespace VsConsoleOutput
                             IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
         {
 
+            if (thread != null)
+            {
+                __ThreadCreated(thread);
+            }
+            return VSConstants.S_OK;
+
             ///// 
             ///IDebugEngine2::DestroyProgram
 
@@ -336,6 +342,71 @@ namespace VsConsoleOutput
             }
             return cmdLine;
         }
+
+        void __ThreadCreated(IDebugThread2 thread)
+        {
+            IEnumDebugFrameInfo2 frame;
+            thread.EnumFrameInfo(
+                enum_FRAMEINFO_FLAGS.FIF_LANGUAGE |
+                enum_FRAMEINFO_FLAGS.FIF_FRAME |
+                enum_FRAMEINFO_FLAGS.FIF_FUNCNAME |
+                enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_MODULE |
+                enum_FRAMEINFO_FLAGS.FIF_ARGS |
+                enum_FRAMEINFO_FLAGS.FIF_MODULE |
+                enum_FRAMEINFO_FLAGS.FIF_DEBUGINFO |
+                enum_FRAMEINFO_FLAGS.FIF_STALECODE |
+                enum_FRAMEINFO_FLAGS.FIF_FLAGS |
+                enum_FRAMEINFO_FLAGS.FIF_DEBUG_MODULEP |
+                enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_FORMAT |
+                enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_MODULE |
+                enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_LINES |
+                enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_OFFSET |
+                enum_FRAMEINFO_FLAGS.FIF_FILTER_INCLUDE_ALL |
+                enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_ARGS_TYPES |
+                enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_ARGS_NAMES |
+                enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_ARGS_ALL |
+                enum_FRAMEINFO_FLAGS.FIF_ARGS_TYPES |
+                enum_FRAMEINFO_FLAGS.FIF_ARGS_NAMES |
+                enum_FRAMEINFO_FLAGS.FIF_ARGS_VALUES |
+                enum_FRAMEINFO_FLAGS.FIF_ARGS_ALL //|
+                                                  //enum_FRAMEINFO_FLAGS.FIF_ARGS_NOFORMAT |
+                                                  //enum_FRAMEINFO_FLAGS.FIF_ARGS_NO_FUNC_EVAL |
+                                                  //enum_FRAMEINFO_FLAGS.FIF_FILTER_NON_USER_CODE |
+                                                  //enum_FRAMEINFO_FLAGS.FIF_ARGS_NO_TOSTRING |
+                , 0, out frame);
+            uint frames;
+            frame.GetCount(out frames);
+            var frameInfo = new FRAMEINFO[1];
+            uint pceltFetched = 0;
+            while ((frame.Next(1, frameInfo, ref pceltFetched) == VSConstants.S_OK) && (pceltFetched > 0))
+            {
+                var fr = frameInfo[0].m_pFrame as IDebugStackFrame2;
+                if (fr == null)
+                {
+                    //Trace.WriteLine(string.Format("Frame func {0}", frameInfo[0].m_bstrFuncName));
+                    continue;
+                }
+
+                IDebugExpressionContext2 expressionContext;
+                fr.GetExpressionContext(out expressionContext);
+                if (expressionContext != null)
+                {
+                    IDebugExpression2 de;
+                    string error;
+                    uint errorCode;
+                    //if (expressionContext.ParseText("System.Console.BufferWidth", enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
+                    if (expressionContext.ParseText("GetStdHandle(-11)", enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
+                    {
+                        IDebugProperty2 dp2;
+                        var res = de.EvaluateSync(enum_EVALFLAGS.EVAL_RETURNVALUE, 5000, null, out dp2);
+                        var myInfo = new DEBUG_PROPERTY_INFO[1];
+                        dp2.GetPropertyInfo(enum_DEBUGPROP_INFO_FLAGS.DEBUGPROP_INFO_ALL, 0, 5000, null, 0, myInfo);
+                        var stackTrace = myInfo[0].bstrValue;
+                    }
+                }
+            }
+        }
+
 
         private void RestartDebug()
         {

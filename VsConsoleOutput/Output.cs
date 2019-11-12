@@ -35,6 +35,7 @@ namespace VsConsoleOutput
                     if (_consolePane == null)
                     {
                         // TODO add pane with GUID)))  {204E2A26-7BD7-4632-8043-18D94C179103}
+                        // https://docs.microsoft.com/ru-ru/visualstudio/extensibility/extending-the-output-window?view=vs-2015&redirectedfrom=MSDNs
                         _consolePane = dte.ToolWindows.OutputWindow.OutputWindowPanes.Add("Console");
                         _consolePane.Activate();
                         _consolePane.Clear();
