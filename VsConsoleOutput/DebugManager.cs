@@ -35,6 +35,7 @@ namespace VsConsoleOutput
 
         public DebugManager()
         {
+            _dte = VsConsoleOutputPackage.getDTE();
             _dte2 = VsConsoleOutputPackage.getDTE2();
             _debugger = VsConsoleOutputPackage.getDebugger();
             _debugger2 = VsConsoleOutputPackage.getDebugger2();
@@ -66,6 +67,7 @@ namespace VsConsoleOutput
             }
             _debugger.AdviseDebuggerEvents(this, out _cookie);
             _debugger.AdviseDebugEventCallback(this);
+
         }
 
         public void Unadvise()
@@ -91,7 +93,9 @@ namespace VsConsoleOutput
                     Output.Log("DBGMODE_EncMask");
                     break;
                 case DBGMODE.DBGMODE_Run:
-                    Output.Log("DBGMODE_Run");
+                    {
+                        Output.Log("DBGMODE_Run");
+                    }
                     break;
                 default:
                     Output.Log("DBGMODE --- UNKNOWN");
@@ -105,14 +109,12 @@ namespace VsConsoleOutput
                  IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
         {
             //if (debugEvent is IDebugThreadCreateEvent2)
-            if (thread != null)
+            if ((thread != null) && (_debug_mode == DBGMODE.DBGMODE_Break))
             {
                 __ThreadCreated(thread);
             }
             return VSConstants.S_OK;
         }
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern IntPtr GetStdHandle(int nStdHandle);
         void __ThreadCreated(IDebugThread2 thread)
         {
             IEnumDebugFrameInfo2 frame;
@@ -164,24 +166,33 @@ namespace VsConsoleOutput
                     IDebugExpression2 de;
                     string error;
                     uint errorCode;
-                    //if (expressionContext.ParseText("System.Console.Out", enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
-                    if (expressionContext.ParseText("GetStdHandle(-11)", enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
+                    // if (expressionContext.ParseText("System.Console.Out", enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
+                    //  dp2.GetPropertyInfo(enum_DEBUGPROP_INFO_FLAGS.DEBUGPROP_INFO_ALL, 0, 5000, null, 0, myInfo);
+                    // !!!! TODO TEST IVsDebugger2.GetConsoleHandlesForProcess(UInt32, UInt64, UInt64, UInt64) Method on break
+                    // IVsDebugLaunch.DebugLaunch(UInt32)
+                    if (expressionContext.ParseText("System.Console.SetOut(new System.IO.StreamWriter(\"Test.txt\"))", enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
                     {
+                        //new System.IO.FileStream("Test.txt", System.IO.FileMode.Create)
                         IDebugProperty2 dp2;
                         var res = de.EvaluateSync(enum_EVALFLAGS.EVAL_RETURNVALUE, 5000, null, out dp2);
                         var myInfo = new DEBUG_PROPERTY_INFO[1];
                         dp2.GetPropertyInfo(enum_DEBUGPROP_INFO_FLAGS.DEBUGPROP_INFO_ALL, 0, 5000, null, 0, myInfo);
-                        var stackTrace = myInfo[0].bstrValue;
+                        var outputTextWriter = myInfo[0].bstrValue;
+                        
+                        //var stackTrace = myInfo[0].bstrValue;
+
                     }
                 }
             }
         }
 
+
         //http://microsin.net/programming/pc/marshalling-with-csharp-simple-types.html
 
         /// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+        // IVsCommandArgInfo --
+        // 
         //private void GetFullInfo()
         //{
         //    Output.Log("--- GetFullInfo START");

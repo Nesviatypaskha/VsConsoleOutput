@@ -8,54 +8,57 @@ namespace VsConsoleOutput
 {
     class Info
     {
-//        Launching a Program
-//Users who want to debug a program can press F5 to run the debugger from theIDE.This begins a series of events that
-//ultimately result in theIDE's connecting to a debug engine(DE), which is in turn connected, or attached, to the program as
-//        follows:
-//        1. TheIDE first calls the project packageto get thesolution's active project debug settings.Thesettings includethestarting
-//        directory, theenvironmentvariables, the port in which the program will run,and the DE to useto createthe program, if
-//        specified.Thesesettings are passed to the debug package.
-//        2. If a DE is specified, the DE calls the operating system to launch the program.As a consequence of launching the program,
-//        the program's run-timeenvironment is loaded.For example, if a program is written in MSIL, thecommon language
-//        runtime will beinvoked to run the program.
-//        -orIf a DE is not specified, the port calls the operating system to launch the program, which causes the program's run-time
-//        environment to beloaded.
-//        Note
-//        If a DE is used to launch a program, it is likely that thesame DE will beattached to the program.
-//        3. Depending on whether the DE or the port launched the program, the DE or therun-timeenvironment then creates a
-//        program description, or node, and notifies the port that the program is running.
-//        Note
-//        It is recommended that therun-timeenvironment createthe program node, becausethe program nodeis a lightweight
-//        representation of a program that can be debugged.Thereis no need to load up an entire DE just to createand register
-//        a program node. If the DE is designed to run in the process of theIDE, but no IDE is actually running, there needs to be
-//        a component that can add a program nodeto the port.
-//        The newly created program, along with any other programs, related or unrelated, launched or attached to from thesameIDE,
-//        composea debug session.
-//        Programmatically, when the user first presses F5, Visual Studio's debug packagecalls the project package(which is associated
-//        with thetype of program being launched) through the DebugLaunch method, which in turn fills outa VsDebugTargetInfo2
-//        structure with thesolution's active project debug settings.This structureis passed back to the debug packagethrough a call to
-//        theLaunchDebugTargets2 method.The debug packagethen instantiates thesession debug manager (SDM), which launches
-//        the program being debugged and any associated debug engines.
-//        One of thearguments passed to theSDM is the GUID of the DE to be used to launch the program.
-//        If the DE GUID is not GUID_NULL, theSDM co-creates the DE, and then calls its IDebugEngineLaunch2::LaunchSuspended
-//        method to launch the program.For example, if a program is written in nativecode, then
-//        IDebugEngineLaunch2::LaunchSuspended will probably call CreateProcess and ResumeThread (Win32 functions) to run
-//        the program.
-//        As a consequence of launching the program, the program's run-timeenvironment is loaded.Either the DE or therun-time
-//        environment then creates an IDebugProgramNode2 interfaceto describethe program and passes this interfaceto
-//        IDebugPortNotify2::AddProgramNodeto notify the port that the program is running.
-//        If GUID_NULLis passed, then the port launches the program. Oncethe program is running, therun-timeenvironment creates
-//        an IDebugProgramNode2 interfaceto describethe program and passes it to IDebugPortNotify2::AddProgramNode.This
-//        notifies the port that the program is running.Then theSDM attaches the debug engineto therunning program.
-//        In This Section
-//        Notifying the Port
-//        Explains what happens after a program is launched and the port is notified.
-//        Attaching After a Launch
-//        Documents when the debug session is ready to attach the DE to the program.
-//        Documents when the debug session is ready to attach the DE to the program.
-//        Related Sections
-//        Debugging Tasks
-//        Contains links to various debugging tasks, such as launching a program and evaluating expressions
+        // IVsCommandArgInfo -- https://docs.microsoft.com/en-us/dotnet/api/microsoft.visualstudio.shell.interop.ivscommandarginfo?view=visualstudiosdk-2017
+
+
+        //        Launching a Program
+        //Users who want to debug a program can press F5 to run the debugger from theIDE.This begins a series of events that
+        //ultimately result in theIDE's connecting to a debug engine(DE), which is in turn connected, or attached, to the program as
+        //        follows:
+        //        1. TheIDE first calls the project packageto get thesolution's active project debug settings.Thesettings includethestarting
+        //        directory, theenvironmentvariables, the port in which the program will run,and the DE to useto createthe program, if
+        //        specified.Thesesettings are passed to the debug package.
+        //        2. If a DE is specified, the DE calls the operating system to launch the program.As a consequence of launching the program,
+        //        the program's run-timeenvironment is loaded.For example, if a program is written in MSIL, thecommon language
+        //        runtime will beinvoked to run the program.
+        //        -orIf a DE is not specified, the port calls the operating system to launch the program, which causes the program's run-time
+        //        environment to beloaded.
+        //        Note
+        //        If a DE is used to launch a program, it is likely that thesame DE will beattached to the program.
+        //        3. Depending on whether the DE or the port launched the program, the DE or therun-timeenvironment then creates a
+        //        program description, or node, and notifies the port that the program is running.
+        //        Note
+        //        It is recommended that therun-timeenvironment createthe program node, becausethe program nodeis a lightweight
+        //        representation of a program that can be debugged.Thereis no need to load up an entire DE just to createand register
+        //        a program node. If the DE is designed to run in the process of theIDE, but no IDE is actually running, there needs to be
+        //        a component that can add a program nodeto the port.
+        //        The newly created program, along with any other programs, related or unrelated, launched or attached to from thesameIDE,
+        //        composea debug session.
+        //        Programmatically, when the user first presses F5, Visual Studio's debug packagecalls the project package(which is associated
+        //        with thetype of program being launched) through the DebugLaunch method, which in turn fills outa VsDebugTargetInfo2
+        //        structure with thesolution's active project debug settings.This structureis passed back to the debug packagethrough a call to
+        //        theLaunchDebugTargets2 method.The debug packagethen instantiates thesession debug manager (SDM), which launches
+        //        the program being debugged and any associated debug engines.
+        //        One of thearguments passed to theSDM is the GUID of the DE to be used to launch the program.
+        //        If the DE GUID is not GUID_NULL, theSDM co-creates the DE, and then calls its IDebugEngineLaunch2::LaunchSuspended
+        //        method to launch the program.For example, if a program is written in nativecode, then
+        //        IDebugEngineLaunch2::LaunchSuspended will probably call CreateProcess and ResumeThread (Win32 functions) to run
+        //        the program.
+        //        As a consequence of launching the program, the program's run-timeenvironment is loaded.Either the DE or therun-time
+        //        environment then creates an IDebugProgramNode2 interfaceto describethe program and passes this interfaceto
+        //        IDebugPortNotify2::AddProgramNodeto notify the port that the program is running.
+        //        If GUID_NULLis passed, then the port launches the program. Oncethe program is running, therun-timeenvironment creates
+        //        an IDebugProgramNode2 interfaceto describethe program and passes it to IDebugPortNotify2::AddProgramNode.This
+        //        notifies the port that the program is running.Then theSDM attaches the debug engineto therunning program.
+        //        In This Section
+        //        Notifying the Port
+        //        Explains what happens after a program is launched and the port is notified.
+        //        Attaching After a Launch
+        //        Documents when the debug session is ready to attach the DE to the program.
+        //        Documents when the debug session is ready to attach the DE to the program.
+        //        Related Sections
+        //        Debugging Tasks
+        //        Contains links to various debugging tasks, such as launching a program and evaluating expressions
 
 
 
