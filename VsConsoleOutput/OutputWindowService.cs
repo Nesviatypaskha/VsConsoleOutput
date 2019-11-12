@@ -8,7 +8,7 @@ using VSConstants = Microsoft.VisualStudio.VSConstants;
 namespace VsConsoleOutput
 {
     [CLSCompliant(false)]
-    class OutputWindowService : IVsOutputWindow
+    class OutputWindowService// : IVsOutputWindow
     {
         private Dictionary<Guid, string> paneList = new Dictionary<Guid, string>();
 

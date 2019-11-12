@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Threading;
+using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
@@ -38,7 +39,10 @@ namespace VsConsoleOutput
         /// </summary>
         public const string PackageGuidString = "f6dfad00-7979-4fd7-b28b-71336c51f20f";
         private static IVsDebugger _debugger;
+        private static IVsDebugger2 _debugger2;
+        private static IVsUIShell _uiShell;
 
+        private static DTE _dte;
         private static DTE2 _dte2;
 
         #region Package Members
@@ -63,6 +67,12 @@ namespace VsConsoleOutput
             Output.Console("VsConsoleOutput is ready");
             Output.ClearConsole();
         }
+        public static DTE getDTE()
+        {
+            if (_dte == null)
+                _dte = GetGlobalService(typeof(SDTE)) as DTE;
+            return _dte;
+        }
         public static DTE2 getDTE2()
         {
             if (_dte2 == null)
@@ -76,6 +86,19 @@ namespace VsConsoleOutput
                 _debugger = GetGlobalService(typeof(SVsShellDebugger)) as IVsDebugger;
             return _debugger;
         }
+        public static IVsDebugger2 getDebugger2()
+        {
+            if (_debugger == null)
+                _debugger2 = GetGlobalService(typeof(SVsShellDebugger)) as IVsDebugger2;
+            return _debugger2;
+        }
+
+        public static IVsUIShell getUIShell()
+        {
+            if (_uiShell == null)
+                _uiShell = GetGlobalService(typeof(SVsUIShell)) as IVsUIShell;
+            return _uiShell;
+        }
 
         protected override int QueryClose(out bool canClose)
         {
@@ -83,7 +106,7 @@ namespace VsConsoleOutput
             canClose = true;
             try
             {
-                DebugManager.Instance.Unadvise();
+                //DebugManager.Instance.Unadvise();
                 hr = base.QueryClose(out canClose);
                 Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(hr);
             }

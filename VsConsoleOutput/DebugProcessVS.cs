@@ -119,7 +119,7 @@ namespace VsConsoleOutput
             }
             catch (Exception ex)
             {
-                Output.Log("EXCEPTION: within Killing process:  {0} {1}", debuggedProcess.ProcessName, ex.ToString());
+                //Output.Log("EXCEPTION: within Killing process:  {0} {1}", debuggedProcess.ProcessName, ex.ToString());
             }
         }
         private void StandardOutputReceiver(object sendingProcess, DataReceivedEventArgs outLine)
