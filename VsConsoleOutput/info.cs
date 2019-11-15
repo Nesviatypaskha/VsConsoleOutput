@@ -10,6 +10,8 @@ namespace VsConsoleOutput
     {
         // IVsCommandArgInfo -- https://docs.microsoft.com/en-us/dotnet/api/microsoft.visualstudio.shell.interop.ivscommandarginfo?view=visualstudiosdk-2017
 
+        // IDebugEngine2::DestroyProgram
+
 
         //        Launching a Program
         //Users who want to debug a program can press F5 to run the debugger from theIDE.This begins a series of events that

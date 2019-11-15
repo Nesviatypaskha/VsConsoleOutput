@@ -56,12 +56,21 @@ namespace VsConsoleOutput
         /// <returns>A task representing the async work of package initialization, or an already completed task if there is none. Do not return null from this method.</returns>
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
+            // https://docs.microsoft.com/en-us/visualstudio/extensibility/how-to-provide-an-asynchronous-visual-studio-service?view=vs-2019
             // When initialized asynchronously, the current thread may be a background thread at this point.
             // Do any initialization that requires the UI thread after switching to the UI thread.
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
             DebugManager.Instantiate();
             DebugManager.Instance.Advise();
+
+            _debugger2 = GetServiceAsync(typeof(SVsShellDebugger)) as IVsDebugger2;
+            _dte = GetGlobalService(typeof(SDTE)) as DTE;
+
+            DebuggerEvents debuggerEvents = _dte.Events.DebuggerEvents;
+
+            debuggerEvents.OnEnterBreakMode += OnEnterBreakModeHandler;
+            debuggerEvents.OnEnterRunMode += OnEnterRunModeHandler;
 
             Output.Log("Extention started");
             Output.Console("VsConsoleOutput is ready");
@@ -116,6 +125,16 @@ namespace VsConsoleOutput
             }
             return hr;
         }
+
+        public static void OnEnterBreakModeHandler(dbgEventReason reason, ref dbgExecutionAction execAction)
+        {
+            Output.Log("OnEnterBreakModeHandler");
+        }
+        public static void OnEnterRunModeHandler(dbgEventReason reason)
+        {
+            Output.Log("OnEnterRunModeHandler");
+        }
+
         #endregion
     }
 }

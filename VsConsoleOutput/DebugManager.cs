@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.Shell;
 using System.IO;
 using Process = System.Diagnostics.Process;
 using System.Runtime.InteropServices;
+using Task = System.Threading.Tasks.Task;
 
 namespace VsConsoleOutput
 {
@@ -35,6 +36,7 @@ namespace VsConsoleOutput
 
         public DebugManager()
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             _dte = VsConsoleOutputPackage.getDTE();
             _dte2 = VsConsoleOutputPackage.getDTE2();
             _debugger = VsConsoleOutputPackage.getDebugger();
@@ -42,7 +44,21 @@ namespace VsConsoleOutput
             //_solutionBuildManager = VsConsoleOutputPackage.getSolutionBuildManager();
             commands = _dte2.Commands as EnvDTE80.Commands2;
             isAttached = false;
+
+            //DebuggerEvents debuggerEvents = _dte.Events.DebuggerEvents;
+
+            //debuggerEvents.OnEnterBreakMode += OnEnterBreakModeHandler;
+            //debuggerEvents.OnEnterRunMode += OnEnterRunModeHandler;
         }
+
+        //public static void OnEnterBreakModeHandler(dbgEventReason reason, ref dbgExecutionAction execAction)
+        //{
+        //    Output.Log("OnEnterBreakModeHandler");
+        //}
+        //public static void OnEnterRunModeHandler(dbgEventReason reason)
+        //{
+        //    Output.Log("OnEnterRunModeHandler");
+        //}
 
         public static void Instantiate()
         {
@@ -95,6 +111,7 @@ namespace VsConsoleOutput
                 case DBGMODE.DBGMODE_Run:
                     {
                         Output.Log("DBGMODE_Run");
+                        //addMainBreakpoint();
                     }
                     break;
                 default:
@@ -105,18 +122,37 @@ namespace VsConsoleOutput
             return VSConstants.S_OK;
         }
 
-        public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program,
-                 IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
+        private void addMainBreakpoint()
         {
-            //if (debugEvent is IDebugThreadCreateEvent2)
-            if ((thread != null) && (_debug_mode == DBGMODE.DBGMODE_Break))
+            if (_dte != null)
             {
-                __ThreadCreated(thread);
+                _dte.Debugger.Breakpoints.Add("Main");
             }
-            return VSConstants.S_OK;
         }
-        void __ThreadCreated(IDebugThread2 thread)
+
+        //public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program,
+        //         IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
+        //{
+        //    if (debugEvent is IDebugThreadCreateEvent2)
+        //    {
+
+        //    }
+        //    if ((thread != null) && (_debug_mode == DBGMODE.DBGMODE_Break))
+        //    {
+        //        __ThreadCreated(thread);
+        //        var info = new PROCESS_INFO[1];
+        //        process.GetInfo(enum_PROCESS_INFO_FIELDS.PIF_ALL, info);
+        //        Output.Log("------------------------------------------------");
+        //        Output.Log("--- Parrent pid = {0}", info[0].ProcessId.dwProcessId);
+        //        Output.Log("------------------------------------------------");
+        //    }
+        //    return VSConstants.S_OK;
+        //}
+
+        private void __ThreadCreated(IDebugThread2 thread)
         {
+            isAttached = false;
+            ThreadHelper.ThrowIfNotOnUIThread();
             IEnumDebugFrameInfo2 frame;
             thread.EnumFrameInfo(
                 enum_FRAMEINFO_FLAGS.FIF_LANGUAGE |
@@ -150,6 +186,7 @@ namespace VsConsoleOutput
             frame.GetCount(out frames);
             var frameInfo = new FRAMEINFO[1];
             uint pceltFetched = 0;
+            //_dte.Debugger.Break();
             while ((frame.Next(1, frameInfo, ref pceltFetched) == VSConstants.S_OK) && (pceltFetched > 0))
             {
                 var fr = frameInfo[0].m_pFrame as IDebugStackFrame2;
@@ -158,7 +195,6 @@ namespace VsConsoleOutput
                     //Trace.WriteLine(string.Format("Frame func {0}", frameInfo[0].m_bstrFuncName));
                     continue;
                 }
-
                 IDebugExpressionContext2 expressionContext;
                 fr.GetExpressionContext(out expressionContext);
                 if (expressionContext != null)
@@ -170,7 +206,8 @@ namespace VsConsoleOutput
                     //  dp2.GetPropertyInfo(enum_DEBUGPROP_INFO_FLAGS.DEBUGPROP_INFO_ALL, 0, 5000, null, 0, myInfo);
                     // !!!! TODO TEST IVsDebugger2.GetConsoleHandlesForProcess(UInt32, UInt64, UInt64, UInt64) Method on break
                     // IVsDebugLaunch.DebugLaunch(UInt32)
-                    if (expressionContext.ParseText("System.Console.SetOut(new System.IO.StreamWriter(\"Test.txt\"))", enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
+                    //if (expressionContext.ParseText("System.Console.SetOut(new System.IO.StreamWriter(\"Test.txt\"))", enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
+                    if (expressionContext.ParseText("System.Console.WriteLine(\"IT WORKS!!!\")", enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
                     {
                         //new System.IO.FileStream("Test.txt", System.IO.FileMode.Create)
                         IDebugProperty2 dp2;
@@ -184,6 +221,7 @@ namespace VsConsoleOutput
                     }
                 }
             }
+            _dte.ExecuteCommand("Debug.Start");
         }
 
 
@@ -254,176 +292,189 @@ namespace VsConsoleOutput
         //    Output.Log("--- GetFullInfo END -----------------------");
         //}
 
-        //public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program,
-        //                    IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
-        //{
+        public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program,
+                            IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
+        {
+            if ((thread != null) && (_debug_mode == DBGMODE.DBGMODE_Break))
+            {
+                __ThreadCreated(thread);
+                //Go();
+            }
+            //if (thread != null)
+            //{
+            //    __ThreadCreated(thread);
+            //}
+            //return VSConstants.S_OK;
 
-        //    if (thread != null)
-        //    {
-        //        __ThreadCreated(thread);
-        //    }
-        //    //return VSConstants.S_OK;
-
-        //    ///// 
-        //    ///IDebugEngine2::DestroyProgram
-
-
-        //    // https://social.msdn.microsoft.com/Forums/vstudio/en-US/76e2621f-270c-4de1-bd87-e6fd98244ac4/ad7-custom-debugger-trace-logs?forum=vsx // AD7 custom debugger trace logs
-        //    // IDebugPortEx2::LaunchSuspended
-        //    // test and monitor https://docs.microsoft.com/en-us/dotnet/api/microsoft.visualstudio.shell.interop.ivsdebugger4?view=visualstudiosdk-2017 
-        //    // EnumCurrentlyDebuggingProjects(IEnumHierarchies)	Returns the set of projects that have been launched through a debugger launch(F5) and that the debugger is currently debugging.
-
-        //    if ((debugEvent is IDebugSessionCreateEvent2) || (riidEvent.ToString("B") == "2c2b15b7-fc6d-45b3-9622-29665d964a76"))
-        //        Output.Log("debugEvent is IDebugSessionCreateEvent2"); //"IDebugSessionCreateEvent2","2c2b15b7-fc6d-45b3-9622-29665d964a76"
-        //    else if ((debugEvent is IDebugProcessCreateEvent2) || (riidEvent.ToString("B") == "bac3780f-04da-4726-901c-ba6a4633e1ca"))
-        //        Output.Log("debugEvent is IDebugProcessCreateEvent2"); //"IDebugProcessCreateEvent2","bac3780f-04da-4726-901c-ba6a4633e1ca"
-        //    else if ((debugEvent is IDebugCustomEvent110) || (riidEvent.ToString("B") == "2615d9bc-1948-4d21-81ee-7a963f20cf59"))
-        //        Output.Log("debugEvent is IDebugCustomEvent110 "); //"IDebugProcessCreateEvent2","2615d9bc-1948-4d21-81ee-7a963f20cf59"
-        //    else if ((debugEvent is IDebugProgramCreateEvent2) || (riidEvent.ToString("B") == "96cd11ee-ecd4-4e89-957e-b5d496fc4139"))
-        //        Output.Log("debugEvent is IDebugProgramCreateEvent2 "); //"IDebugProgramCreateEvent2","96cd11ee-ecd4-4e89-957e-b5d496fc4139"
-        //    else if ((debugEvent is IDebugModuleLoadEvent2) || (riidEvent.ToString("B") == "989db083-0d7c-40d1-a9d9-921bf611a4b2"))
-        //        Output.Log("debugEvent is IDebugModuleLoadEvent2 "); //"IDebugModuleLoadEvent2","989db083-0d7c-40d1-a9d9-921bf611a4b2"
-        //    else if ((debugEvent is IDebugThreadCreateEvent2) || (riidEvent.ToString("B") == "2090ccfc-70c5-491d-a5e8-bad2dd9ee3ea"))
-        //    {
-        //        //  This interface is sent by the debug engine (DE) to the session debug manager (SDM) when a thread is created in a program being debugged.
-        //        Output.Log("debugEvent is IDebugThreadCreateEvent2 "); //"IDebugThreadCreateEvent2","2090ccfc-70c5-491d-a5e8-bad2dd9ee3ea"
-        //        var info = new PROCESS_INFO[1];
-        //        process.GetInfo(enum_PROCESS_INFO_FIELDS.PIF_ALL, info);
-        //        Output.Log("------------------------------------------------");
-        //        Output.Log("--- Parrent pid = {0}", info[0].ProcessId.dwProcessId);
-        //        Output.Log("------------------------------------------------");
-        //        ulong stdIN;
-        //        ulong stdOUT;
-        //        ulong stdERROR;
-
-        //        //_debugger2.GetConsoleHandlesForProcess(info[0].ProcessId.dwProcessId,out stdIN, out stdOUT, out stdERROR);
-        //    }
-        //    else if ((debugEvent is IDebugTelemetryDetailsEvent150) || (riidEvent.ToString("B") == "8f2652b2-cd3c-4aed-a946-a3db6f379412"))
-        //        Output.Log("debugEvent is IDebugTelemetryDetailsEvent150"); //"IDebugTelemetryDetailsEvent150","8f2652b2-cd3c-4aed-a946-a3db6f379412"
-        //    else if ((debugEvent is IDebugLoadCompleteEvent2) || (riidEvent.ToString("B") == "b1844850-1349-45d4-9f12-495212f5eb0b"))
-        //        Output.Log("debugEvent is IDebugLoadCompleteEvent2"); //"IDebugLoadCompleteEvent2","b1844850-1349-45d4-9f12-495212f5eb0b"
-        //    else if ((debugEvent is IDebugEntryPointEvent2) || (riidEvent.ToString("B") == "e8414a3e-1642-48ec-829e-5f4040e16da9"))
-        //        Output.Log("debugEvent is IDebugEntryPointEvent2"); //"IDebugEntryPointEvent2","e8414a3e-1642-48ec-829e-5f4040e16da9"
-        //    else if ((debugEvent is IDebugProcessContinueEvent100) || (riidEvent.ToString("B") == "c703ebea-42e7-4768-85a9-692eecba567b"))
-        //        Output.Log("debugEvent is IDebugProcessContinueEvent100 "); //"IDebugProcessContinueEvent100 ","c703ebea-42e7-4768-85a9-692eecba567b"
-        //    else if ((debugEvent is IDebugThreadDestroyEvent2) || (riidEvent.ToString("B") == "2c3b7532-a36f-4a6e-9072-49be649b8541"))
-        //        Output.Log("debugEvent is IDebugThreadDestroyEvent2"); //"IDebugThreadDestroyEvent2","2c3b7532-a36f-4a6e-9072-49be649b8541"
-        //    else if ((debugEvent is IDebugProgramDestroyEvent2) || (riidEvent.ToString("B") == "e147e9e3-6440-4073-a7b7-a65592c714b5"))
-        //        Output.Log("debugEvent is IDebugProgramDestroyEvent2"); //"IDebugProgramDestroyEvent2","e147e9e3-6440-4073-a7b7-a65592c714b5"
-        //    else if ((debugEvent is IDebugProcessDestroyEvent2) || (riidEvent.ToString("B") == "3e2a0832-17e1-4886-8c0e-204da242995f"))
-        //        Output.Log("debugEvent is IDebugProcessDestroyEvent2"); //"IDebugProcessDestroyEvent2","3e2a0832-17e1-4886-8c0e-204da242995f"
-        //    else if ((debugEvent is IDebugSessionDestroyEvent2) || (riidEvent.ToString("B") == "f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"))
-        //    {
-        //        isAttached = false;
-        //        _debugProcess.KillProcess();
-        //        Output.Log("debugEvent is IDebugSessionDestroyEvent2"); //"IDebugSessionDestroyEvent2","f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"
-        //    }
-
-        //    else
-        //        Output.Log("Event Command.name = {0}.{1}", riidEvent.ToString("B"), attributes);
-
-        //    // https://docs.microsoft.com/ru-ru/visualstudio/extensibility/debugger/reference/idebugprogram2-getencupdate?view=vs-2015&redirectedfrom=MSDN
+            ///// 
+            ///IDebugEngine2::DestroyProgram
 
 
+            // https://social.msdn.microsoft.com/Forums/vstudio/en-US/76e2621f-270c-4de1-bd87-e6fd98244ac4/ad7-custom-debugger-trace-logs?forum=vsx // AD7 custom debugger trace logs
+            // IDebugPortEx2::LaunchSuspended
+            // test and monitor https://docs.microsoft.com/en-us/dotnet/api/microsoft.visualstudio.shell.interop.ivsdebugger4?view=visualstudiosdk-2017 
+            // EnumCurrentlyDebuggingProjects(IEnumHierarchies)	Returns the set of projects that have been launched through a debugger launch(F5) and that the debugger is currently debugging.
+            
+            if ((debugEvent is IDebugSessionCreateEvent2) || (riidEvent.ToString("B") == "2c2b15b7-fc6d-45b3-9622-29665d964a76"))
+                Output.Log("debugEvent is IDebugSessionCreateEvent2.{0}", attributes); //"IDebugSessionCreateEvent2","2c2b15b7-fc6d-45b3-9622-29665d964a76"
+            else if ((debugEvent is IDebugProcessCreateEvent2) || (riidEvent.ToString("B") == "bac3780f-04da-4726-901c-ba6a4633e1ca"))
+                Output.Log("debugEvent is IDebugProcessCreateEvent2.{0}", attributes); //"IDebugProcessCreateEvent2","bac3780f-04da-4726-901c-ba6a4633e1ca"
+            else if ((debugEvent is IDebugCustomEvent110) || (riidEvent.ToString("B") == "2615d9bc-1948-4d21-81ee-7a963f20cf59"))
+                Output.Log("debugEvent is IDebugCustomEvent110 "); //"IDebugProcessCreateEvent2","2615d9bc-1948-4d21-81ee-7a963f20cf59"
+            
+            else if ((debugEvent is IDebugBreakpointErrorEvent2) || (riidEvent.ToString("B") == "abb0ca42-f82b-4622-84e4-6903ae90f210"))
+                Output.Log("debugEvent is IDebugBreakpointErrorEvent2 "); //"IDebugProcessCreateEvent2","abb0ca42-f82b-4622-84e4-6903ae90f210"
 
+            else if ((debugEvent is IDebugProgramCreateEvent2) || (riidEvent.ToString("B") == "96cd11ee-ecd4-4e89-957e-b5d496fc4139"))
+                Output.Log("debugEvent is IDebugProgramCreateEvent2.{0}", attributes); //"IDebugProgramCreateEvent2","96cd11ee-ecd4-4e89-957e-b5d496fc4139"
+            else if ((debugEvent is IDebugModuleLoadEvent2) || (riidEvent.ToString("B") == "989db083-0d7c-40d1-a9d9-921bf611a4b2"))
+                Output.Log("debugEvent is IDebugModuleLoadEvent2.{0}", attributes); //"IDebugModuleLoadEvent2","989db083-0d7c-40d1-a9d9-921bf611a4b2"
+            else if ((debugEvent is IDebugThreadCreateEvent2) || (riidEvent.ToString("B") == "2090ccfc-70c5-491d-a5e8-bad2dd9ee3ea"))
+            {
+                //  This interface is sent by the debug engine (DE) to the session debug manager (SDM) when a thread is created in a program being debugged.
+                Output.Log("debugEvent is IDebugThreadCreateEvent2.{0}", attributes); //"IDebugThreadCreateEvent2","2090ccfc-70c5-491d-a5e8-bad2dd9ee3ea"
+            }
+            else if ((debugEvent is IDebugTelemetryDetailsEvent150) || (riidEvent.ToString("B") == "8f2652b2-cd3c-4aed-a946-a3db6f379412"))
+                Output.Log("debugEvent is IDebugTelemetryDetailsEvent150.{0}", attributes); //"IDebugTelemetryDetailsEvent150","8f2652b2-cd3c-4aed-a946-a3db6f379412"
+            else if ((debugEvent is IDebugLoadCompleteEvent2) || (riidEvent.ToString("B") == "b1844850-1349-45d4-9f12-495212f5eb0b"))
+                Output.Log("debugEvent is IDebugLoadCompleteEvent2.{0}", attributes); //"IDebugLoadCompleteEvent2","b1844850-1349-45d4-9f12-495212f5eb0b"
+            else if ((debugEvent is IDebugEntryPointEvent2) || (riidEvent.ToString("B") == "e8414a3e-1642-48ec-829e-5f4040e16da9"))
+            {
+                addMainBreakpoint();
+                Output.Log("debugEvent is IDebugEntryPointEvent2"); //"IDebugEntryPointEvent2","e8414a3e-1642-48ec-829e-5f4040e16da9"
+                //if (!isAttached)
+                //{
+                //    __ThreadCreated(thread);
+                //}
+            }
+            else if (/*(debugEvent is IDebugBreakpointBoundEvent2Guid) || */(riidEvent.ToString("B") == "1dddb704-cf99-4b8a-b746-dabb01dd13a0"))
+                Output.Log("debugEvent is IDebugBreakpointBoundEvent2Guid.{0}", attributes); //"IDebugBreakpointBoundEvent2Guid ","1dddb704-cf99-4b8a-b746-dabb01dd13a0"
+            else if (/*(debugEvent is IEnumDebugBoundBreakpoints2) || */(riidEvent.ToString("B") == "501c1e21-c557-48b8-ba30-a1eab0bc4a74"))
+                Output.Log("debugEvent is IEnumDebugBoundBreakpoints2.{0}", attributes); //"IEnumDebugBoundBreakpoints2","501c1e21-c557-48b8-ba30-a1eab0bc4a74"
+            else if ((debugEvent is IDebugCurrentThreadChangedEvent100) || (riidEvent.ToString("B") == "8764364b-0c52-4c7c-af6a-8b19a8c98226"))
+                Output.Log("debugEvent is IDebugCurrentThreadChangedEvent100 .{0}", attributes); //"IDebugCurrentThreadChangedEvent100  ","8764364b-0c52-4c7c-af6a-8b19a8c98226"
+            
+            else if ((debugEvent is IDebugCurrentThreadChangedEvent100) || (riidEvent.ToString("B") == "8764364b-0c52-4c7c-af6a-8b19a8c98226"))
+                Output.Log("debugEvent is IDebugCurrentThreadChangedEvent100 .{0}", attributes); //"IDebugCurrentThreadChangedEvent100  ","8764364b-0c52-4c7c-af6a-8b19a8c98226"
 
+            else if ((debugEvent is IDebugProcessContinueEvent100) || (riidEvent.ToString("B") == "c703ebea-42e7-4768-85a9-692eecba567b"))
+                Output.Log("debugEvent is IDebugProcessContinueEvent100.{0}", attributes); //"IDebugProcessContinueEvent100 ","c703ebea-42e7-4768-85a9-692eecba567b"
+            else if ((debugEvent is IDebugThreadDestroyEvent2) || (riidEvent.ToString("B") == "2c3b7532-a36f-4a6e-9072-49be649b8541"))
+                Output.Log("debugEvent is IDebugThreadDestroyEvent2.{0}", attributes); //"IDebugThreadDestroyEvent2","2c3b7532-a36f-4a6e-9072-49be649b8541"
+            else if ((debugEvent is IDebugProgramDestroyEvent2) || (riidEvent.ToString("B") == "e147e9e3-6440-4073-a7b7-a65592c714b5"))
+                Output.Log("debugEvent is IDebugProgramDestroyEvent2.{0}", attributes); //"IDebugProgramDestroyEvent2","e147e9e3-6440-4073-a7b7-a65592c714b5"
+            else if ((debugEvent is IDebugProcessDestroyEvent2) || (riidEvent.ToString("B") == "3e2a0832-17e1-4886-8c0e-204da242995f"))
+                Output.Log("debugEvent is IDebugProcessDestroyEvent2.{0}", attributes); //"IDebugProcessDestroyEvent2","3e2a0832-17e1-4886-8c0e-204da242995f"
+            else if ((debugEvent is IDebugSessionDestroyEvent2) || (riidEvent.ToString("B") == "f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"))
+            {
+                Output.Log("debugEvent is IDebugSessionDestroyEvent2.{0}", attributes); //"IDebugSessionDestroyEvent2","f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"            
+                isAttached = false;
+            }
 
-        //    if (process == null)
-        //        return VSConstants.S_OK;
-        //    SolutionBuild2 solutionBuild2 = _dte2.Solution.SolutionBuild as SolutionBuild2;
-        //    SolutionConfiguration2 solutionConfiguration2 = (SolutionConfiguration2)solutionBuild2.ActiveConfiguration;
+            else
+                Output.Log("Event Command.name = {0}.{1}", riidEvent.ToString("B"), attributes);
 
-        //    if ((!isAttached) && (solutionConfiguration2.Name == "Debug"))
-        //    {
-        //        isAttached = true;
-        //        string process_NAME;
-        //        string process_FILENAME;
-        //        string process_BASENAME;
-        //        string process_MONIKERNAME;
-        //        string process_URL;
-        //        string process_TITLE;
-        //        string process_STARTPAGEURL;
-
-        //        process.GetName(enum_GETNAME_TYPE.GN_NAME, out process_NAME);
-        //        process.GetName(enum_GETNAME_TYPE.GN_FILENAME, out process_FILENAME);
-        //        process.GetName(enum_GETNAME_TYPE.GN_BASENAME, out process_BASENAME);
-        //        process.GetName(enum_GETNAME_TYPE.GN_MONIKERNAME, out process_MONIKERNAME);
-        //        process.GetName(enum_GETNAME_TYPE.GN_URL, out process_URL);
-        //        process.GetName(enum_GETNAME_TYPE.GN_TITLE, out process_TITLE);
-        //        process.GetName(enum_GETNAME_TYPE.GN_STARTPAGEURL, out process_STARTPAGEURL);
-
-        //        Output.Log("GN_NAME: {0}", process_NAME);
-        //        Output.Log("GN_FILENAME: {0}", process_FILENAME);
-        //        Output.Log("GN_BASENAME: {0}", process_BASENAME);
-        //        Output.Log("GN_MONIKERNAME: {0}", process_MONIKERNAME);
-        //        Output.Log("GN_URL: {0}", process_URL);
-        //        Output.Log("GN_TITLE: {0}", process_TITLE);
-        //        Output.Log("GN_STARTPAGEURL: {0}", process_STARTPAGEURL);
-
-        //        var info = new PROCESS_INFO[1];
-        //        process.GetInfo(enum_PROCESS_INFO_FIELDS.PIF_ALL, info);
-        //        Output.Log("------------------------------------------------");
-        //        Output.Log("--- Parrent pid = {0}", info[0].ProcessId.dwProcessId);
-        //        Output.Log("------------------------------------------------");
+            // https://docs.microsoft.com/ru-ru/visualstudio/extensibility/debugger/reference/idebugprogram2-getencupdate?view=vs-2015&redirectedfrom=MSDN
 
 
 
-        //        //EnvDTE90.Debugger3 debugger = (EnvDTE90.Debugger3)dte.Debugger;
-        //        //EnvDTE.Processes processes = debugger.DebuggedProcesses;
-        //        //if (processes.Count == 0)
-        //        //    owp.OutputString("No processes are being debugged.");
-        //        //else
-        //        //    foreach (EnvDTE.Process proc in processes)
-        //        //        owp.OutputString("\nProcess: [" + proc.ProcessID + "] " +
-        //        //                         proc.Name);
-
-        //        DTE2 dte2 = VsConsoleOutputPackage.getDTE2();
-        //        Debugger2 debugger2 = dte2.Debugger as Debugger2;
-        //        EnvDTE90.Debugger3 debugger3 = (EnvDTE90.Debugger3)dte2.Debugger;
-        //        EnvDTE.Processes processes = debugger3.DebuggedProcesses;
-
-        //        //foreach (EnvDTE.Process dte_process in processes)
-        //        //{
-        //        //    if (dte_process.ProcessID == info[0].ProcessId.dwProcessId)
-        //        //    {
-        //        //        dte_process.Terminate(true);
-        //        //        foreach (EnvDTE.Program dte_program in dte_process.Programs)
-        //        //        {
-        //        //            dte_program.Process.Terminate(true);
-        //        //        }
-        //        //    }
-        //        //}
-
-        //        //PROCESS_STARTUP_INFO
 
 
-        //        if (_debugProcess == null)
-        //        {
-        //            _debugProcess = new DebugProcessVS();
+            if (process == null)
+                return VSConstants.S_OK;
+            SolutionBuild2 solutionBuild2 = _dte2.Solution.SolutionBuild as SolutionBuild2;
+            SolutionConfiguration2 solutionConfiguration2 = (SolutionConfiguration2)solutionBuild2.ActiveConfiguration;
 
-        //        }
-        //        _debugProcess.StartProcess(process_FILENAME, "", "");
+            //if (solutionConfiguration2.Name == "Debug")
+            //{
+            //    string process_NAME;
+            //    string process_FILENAME;
+            //    string process_BASENAME;
+            //    string process_MONIKERNAME;
+            //    string process_URL;
+            //    string process_TITLE;
+            //    string process_STARTPAGEURL;
 
+            //    process.GetName(enum_GETNAME_TYPE.GN_NAME, out process_NAME);
+            //    process.GetName(enum_GETNAME_TYPE.GN_FILENAME, out process_FILENAME);
+            //    process.GetName(enum_GETNAME_TYPE.GN_BASENAME, out process_BASENAME);
+            //    process.GetName(enum_GETNAME_TYPE.GN_MONIKERNAME, out process_MONIKERNAME);
+            //    process.GetName(enum_GETNAME_TYPE.GN_URL, out process_URL);
+            //    process.GetName(enum_GETNAME_TYPE.GN_TITLE, out process_TITLE);
+            //    process.GetName(enum_GETNAME_TYPE.GN_STARTPAGEURL, out process_STARTPAGEURL);
 
-        //        //process.Detach();
-        //        //process.Terminate();
+            //    Output.Log("GN_NAME: {0}", process_NAME);
+            //    Output.Log("GN_FILENAME: {0}", process_FILENAME);
+            //    Output.Log("GN_BASENAME: {0}", process_BASENAME);
+            //    Output.Log("GN_MONIKERNAME: {0}", process_MONIKERNAME);
+            //    Output.Log("GN_URL: {0}", process_URL);
+            //    Output.Log("GN_TITLE: {0}", process_TITLE);
+            //    Output.Log("GN_STARTPAGEURL: {0}", process_STARTPAGEURL);
 
-        //        //foreach (EnvDTE.Process process in processes)
-        //        //{
-        //        //    process.Terminate(true);
-        //        //    foreach (EnvDTE.Program program in process.Programs)
-        //        //    {
-        //        //        program.Process.Terminate(true);
-        //        //    }
-        //        //}
+            //    var info = new PROCESS_INFO[1];
+            //    process.GetInfo(enum_PROCESS_INFO_FIELDS.PIF_ALL, info);
+            //    Output.Log("------------------------------------------------");
+            //    Output.Log("--- Parrent pid = {0}", info[0].ProcessId.dwProcessId);
+            //    Output.Log("------------------------------------------------");
 
 
 
-        //        //DebugSetProcessKillOnExit(true);
+            //    //EnvDTE90.Debugger3 debugger = (EnvDTE90.Debugger3)dte.Debugger;
+            //    //EnvDTE.Processes processes = debugger.DebuggedProcesses;
+            //    //if (processes.Count == 0)
+            //    //    owp.OutputString("No processes are being debugged.");
+            //    //else
+            //    //    foreach (EnvDTE.Process proc in processes)
+            //    //        owp.OutputString("\nProcess: [" + proc.ProcessID + "] " +
+            //    //                         proc.Name);
 
-        //    }
-        //    return VSConstants.S_OK;
-        //}
+            //    DTE2 dte2 = VsConsoleOutputPackage.getDTE2();
+            //    Debugger2 debugger2 = dte2.Debugger as Debugger2;
+            //    EnvDTE90.Debugger3 debugger3 = (EnvDTE90.Debugger3)dte2.Debugger;
+            //    EnvDTE.Processes processes = debugger3.DebuggedProcesses;
+
+            //    //foreach (EnvDTE.Process dte_process in processes)
+            //    //{
+            //    //    if (dte_process.ProcessID == info[0].ProcessId.dwProcessId)
+            //    //    {
+            //    //        dte_process.Terminate(true);
+            //    //        foreach (EnvDTE.Program dte_program in dte_process.Programs)
+            //    //        {
+            //    //            dte_program.Process.Terminate(true);
+            //    //        }
+            //    //    }
+            //    //}
+
+            //    //PROCESS_STARTUP_INFO
+
+
+            //    //if (_debugProcess == null)
+            //    //{
+            //    //    _debugProcess = new DebugProcessVS();
+
+            //    //}
+            //    //_debugProcess.StartProcess(process_FILENAME, "", "");
+
+
+            //    //process.Detach();
+            //    //process.Terminate();
+
+            //    //foreach (EnvDTE.Process process in processes)
+            //    //{
+            //    //    process.Terminate(true);
+            //    //    foreach (EnvDTE.Program program in process.Programs)
+            //    //    {
+            //    //        program.Process.Terminate(true);
+            //    //    }
+            //    //}
+
+
+
+            //    //DebugSetProcessKillOnExit(true);
+
+            //}
+            return VSConstants.S_OK;
+        }
 
         //private static string GetCommandLine(Process process)
         //{
