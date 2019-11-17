@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="DebugManager.cs" />
     <Compile Include="Info.cs" />
+    <Compile Include="MonitorCommandEvents.cs" />
     <Compile Include="Output.cs" />
     <Compile Include="DebugProcessVS.cs" />
     <Compile Include="OutputWindowService.cs" />

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Timers;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio;
@@ -41,10 +42,11 @@ namespace VsConsoleOutput
         private static IVsDebugger _debugger;
         private static IVsDebugger2 _debugger2;
         private static IVsUIShell _uiShell;
+        private static CancellationToken _cancellationToken;
 
         private static DTE _dte;
         private static DTE2 _dte2;
-
+        private static System.Timers.Timer aTimer;
         #region Package Members
 
         /// <summary>
@@ -72,10 +74,14 @@ namespace VsConsoleOutput
             debuggerEvents.OnEnterBreakMode += OnEnterBreakModeHandler;
             debuggerEvents.OnEnterRunMode += OnEnterRunModeHandler;
 
+            MonitorCommandEvents monitor = new MonitorCommandEvents();
+            monitor.Start(_dte2);
+
             Output.Log("Extention started");
             Output.Console("VsConsoleOutput is ready");
             Output.ClearConsole();
         }
+
         public static DTE getDTE()
         {
             if (_dte == null)

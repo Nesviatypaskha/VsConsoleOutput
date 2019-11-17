@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using EnvDTE;
 using Microsoft.VisualStudio.Shell.Interop;
 
 using VSConstants = Microsoft.VisualStudio.VSConstants;
@@ -10,27 +11,29 @@ namespace VsConsoleOutput
     [CLSCompliant(false)]
     class OutputWindowService// : IVsOutputWindow
     {
-        private Dictionary<Guid, string> paneList = new Dictionary<Guid, string>();
+        //private Dictionary<Guid, string> paneList = new Dictionary<Guid, string>();
 
-        #region IVsOutputWindow Members
+        //#region IVsOutputWindow Members
 
-        public int CreatePane(ref Guid rguidPane, string pszPaneName, int fInitVisible, int fClearWithSolution)
-        {
-            // Keep track of the created pane
-            paneList.Add(rguidPane, pszPaneName);
-            return VSConstants.S_OK;
-        }
+        //public int CreatePane(ref Guid rguidPane, string pszPaneName, int fInitVisible, int fClearWithSolution)
+        //{
+        //    // Keep track of the created pane
+        //    paneList.Add(rguidPane, pszPaneName);
+        //    return VSConstants.S_OK;
+        //}
 
-        public int DeletePane(ref Guid rguidPane)
-        {
-            paneList.Remove(rguidPane);
-            return VSConstants.S_OK;
-        }
+        //public int DeletePane(ref Guid rguidPane)
+        //{
 
-        public int GetPane(ref Guid rguidPane, out IVsOutputWindowPane ppPane)
-        {
-            throw new NotImplementedException();
-        }
+
+        //    paneList.Remove(rguidPane);
+        //    return VSConstants.S_OK;
+        //}
+
+        ////public int GetPane(ref Guid rguidPane, out IVsOutputWindowPane ppPane)
+        ////{
+        ////    throw new NotImplementedException();
+        ////}
 
         //public int GetPane(ref Guid rguidPane, out IVsOutputWindowPane ppPane)
         //{
@@ -43,6 +46,6 @@ namespace VsConsoleOutput
         //    return VSConstants.S_OK;
         //}
 
-        #endregion
+        //#endregion
     }
 }

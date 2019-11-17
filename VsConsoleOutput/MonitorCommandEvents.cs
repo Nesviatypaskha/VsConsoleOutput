@@ -33,9 +33,19 @@ namespace VsConsoleOutput
 
             if (name == "Debug.Start")
             {
-                Logger.Log("OnBeforeExecute Debug.Start");
+                Output.Log("OnBeforeExecute Debug.Start");
                 //TODO test ivsdebugger4 to remove current and add previous
             }
+            //else if (name != "")
+            //{
+            //    Output.Log("OnBeforeExecute = {0}", name);
+            //}
+        }
+        private void OnAfterExecute(string Guid, int ID, object CustomIn, object CustomOut)
+        {
+            string name = GetCommandName(Guid, ID);
+            if (name == "Debug.Start")
+                Output.Log("OnAfterExecute Debug.Start");
         }
         private string GetCommandName(string Guid, int ID)
         {

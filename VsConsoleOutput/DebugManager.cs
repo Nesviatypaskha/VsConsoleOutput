@@ -14,11 +14,13 @@ using System.IO;
 using Process = System.Diagnostics.Process;
 using System.Runtime.InteropServices;
 using Task = System.Threading.Tasks.Task;
+using System.Timers;
 
 namespace VsConsoleOutput
 {
     internal sealed class DebugManager : IVsDebuggerEvents, IDebugEventCallback2//, IDebugPortEvents2, IVsDebugLaunchTargetProvider
     {
+
         private DTE _dte;
         private DTE2 _dte2;
         private readonly IVsDebugger _debugger;
@@ -92,13 +94,29 @@ namespace VsConsoleOutput
             _debugger.UnadviseDebugEventCallback(this);
         }
 
+
+
+
         public int OnModeChange(DBGMODE mode)
         {
+
             switch (mode)
             {
                 case DBGMODE.DBGMODE_Break:
-                    Output.Log("DBGMODE_Break");
-                    break;
+                    {
+                        Output.Log("DBGMODE_Break");
+                        //if (dte != null)
+                        {
+                            //dte.Debugger.ExecuteStatement("System.Console.WriteLine(\"IT WORKS!!!\"", 1, true);
+                            if (!isAttached)
+                            {
+                                ////_dte.Go();//ExecuteCommand("Debug.Start");
+                                //_dte.Debugger.ExecuteStatement("System.Console.WriteLine(\"IT WORKS!!!\"", 1, true);
+                            }
+                        }
+          
+                        break;
+                    }
                 case DBGMODE.DBGMODE_Design:
                     Output.Log("DBGMODE_Design");
                     break;
@@ -111,6 +129,8 @@ namespace VsConsoleOutput
                 case DBGMODE.DBGMODE_Run:
                     {
                         Output.Log("DBGMODE_Run");
+                        //_dte.Debugger.ExecuteStatement("System.Console.WriteLine(\"IT WORKS!!!\"", 0, false);
+                        //_dte.ExecuteCommand("Debug.ToggleBreakpoint");
                         //addMainBreakpoint();
                     }
                     break;
@@ -151,7 +171,7 @@ namespace VsConsoleOutput
 
         private void __ThreadCreated(IDebugThread2 thread)
         {
-            isAttached = false;
+            //isAttached = false;
             ThreadHelper.ThrowIfNotOnUIThread();
             IEnumDebugFrameInfo2 frame;
             thread.EnumFrameInfo(
@@ -197,7 +217,7 @@ namespace VsConsoleOutput
                 }
                 IDebugExpressionContext2 expressionContext;
                 fr.GetExpressionContext(out expressionContext);
-                if (expressionContext != null)
+                if ((expressionContext != null) && (isAttached == false))
                 {
                     IDebugExpression2 de;
                     string error;
@@ -209,19 +229,25 @@ namespace VsConsoleOutput
                     //if (expressionContext.ParseText("System.Console.SetOut(new System.IO.StreamWriter(\"Test.txt\"))", enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
                     if (expressionContext.ParseText("System.Console.WriteLine(\"IT WORKS!!!\")", enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
                     {
-                        //new System.IO.FileStream("Test.txt", System.IO.FileMode.Create)
-                        IDebugProperty2 dp2;
-                        var res = de.EvaluateSync(enum_EVALFLAGS.EVAL_RETURNVALUE, 5000, null, out dp2);
-                        var myInfo = new DEBUG_PROPERTY_INFO[1];
-                        dp2.GetPropertyInfo(enum_DEBUGPROP_INFO_FLAGS.DEBUGPROP_INFO_ALL, 0, 5000, null, 0, myInfo);
-                        var outputTextWriter = myInfo[0].bstrValue;
+                        isAttached = true;
+                        Output.Log("DebuggerContextMenus.ProcessesWindow.ContinueProcess");
                         
-                        //var stackTrace = myInfo[0].bstrValue;
+                        Output.Log("isAttached = {0}", isAttached);
+                        //new System.IO.FileStream("Test.txt", System.IO.FileMode.Create)
+                        //IDebugProperty2 dp2;
+                        //var res = de.EvaluateSync(enum_EVALFLAGS.EVAL_RETURNVALUE, 5000, null, out dp2);
+                        //var myInfo = new DEBUG_PROPERTY_INFO[1];
+                        //dp2.GetPropertyInfo(enum_DEBUGPROP_INFO_FLAGS.DEBUGPROP_INFO_ALL, 0, 5000, null, 0, myInfo);
+                        //var outputTextWriter = myInfo[0].bstrValue;
 
+                        //var stackTrace = myInfo[0].bstrValue;
+                        //https://github.com/ligershark/VoiceExtension/blob/master/src/Resources/commands.txt
+                        //https://www.cnblogs.com/kekec/p/4069729.html
+
+                        //ClassViewContextMenus.ClassViewProject.Debug
                     }
                 }
             }
-            _dte.ExecuteCommand("Debug.Start");
         }
 
 
@@ -295,9 +321,17 @@ namespace VsConsoleOutput
         public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program,
                             IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
         {
+            
             if ((thread != null) && (_debug_mode == DBGMODE.DBGMODE_Break))
             {
+                //https://stackoverflow.com/questions/28514884/cant-execute-statement-with-vs-debugger-interop
+                //_dte.Debugger.ExecuteStatement("System.Console.WriteLine(\"IT WORKS!!!\"", 1, true);
                 __ThreadCreated(thread);
+                DTE dte = Package.GetGlobalService(typeof(DTE)) as DTE;
+                if (dte != null)
+                {
+                    dte.Debugger.Go();
+                }
                 //Go();
             }
             //if (thread != null)
@@ -314,7 +348,7 @@ namespace VsConsoleOutput
             // IDebugPortEx2::LaunchSuspended
             // test and monitor https://docs.microsoft.com/en-us/dotnet/api/microsoft.visualstudio.shell.interop.ivsdebugger4?view=visualstudiosdk-2017 
             // EnumCurrentlyDebuggingProjects(IEnumHierarchies)	Returns the set of projects that have been launched through a debugger launch(F5) and that the debugger is currently debugging.
-            
+
             if ((debugEvent is IDebugSessionCreateEvent2) || (riidEvent.ToString("B") == "2c2b15b7-fc6d-45b3-9622-29665d964a76"))
                 Output.Log("debugEvent is IDebugSessionCreateEvent2.{0}", attributes); //"IDebugSessionCreateEvent2","2c2b15b7-fc6d-45b3-9622-29665d964a76"
             else if ((debugEvent is IDebugProcessCreateEvent2) || (riidEvent.ToString("B") == "bac3780f-04da-4726-901c-ba6a4633e1ca"))
@@ -340,17 +374,22 @@ namespace VsConsoleOutput
                 Output.Log("debugEvent is IDebugLoadCompleteEvent2.{0}", attributes); //"IDebugLoadCompleteEvent2","b1844850-1349-45d4-9f12-495212f5eb0b"
             else if ((debugEvent is IDebugEntryPointEvent2) || (riidEvent.ToString("B") == "e8414a3e-1642-48ec-829e-5f4040e16da9"))
             {
-                addMainBreakpoint();
+                //addMainBreakpoint();
                 Output.Log("debugEvent is IDebugEntryPointEvent2"); //"IDebugEntryPointEvent2","e8414a3e-1642-48ec-829e-5f4040e16da9"
                 //if (!isAttached)
                 //{
                 //    __ThreadCreated(thread);
                 //}
+                
             }
             else if (/*(debugEvent is IDebugBreakpointBoundEvent2Guid) || */(riidEvent.ToString("B") == "1dddb704-cf99-4b8a-b746-dabb01dd13a0"))
                 Output.Log("debugEvent is IDebugBreakpointBoundEvent2Guid.{0}", attributes); //"IDebugBreakpointBoundEvent2Guid ","1dddb704-cf99-4b8a-b746-dabb01dd13a0"
             else if (/*(debugEvent is IEnumDebugBoundBreakpoints2) || */(riidEvent.ToString("B") == "501c1e21-c557-48b8-ba30-a1eab0bc4a74"))
+            {
                 Output.Log("debugEvent is IEnumDebugBoundBreakpoints2.{0}", attributes); //"IEnumDebugBoundBreakpoints2","501c1e21-c557-48b8-ba30-a1eab0bc4a74"
+                //_dte2.Debugger.Go();
+               
+            }
             else if ((debugEvent is IDebugCurrentThreadChangedEvent100) || (riidEvent.ToString("B") == "8764364b-0c52-4c7c-af6a-8b19a8c98226"))
                 Output.Log("debugEvent is IDebugCurrentThreadChangedEvent100 .{0}", attributes); //"IDebugCurrentThreadChangedEvent100  ","8764364b-0c52-4c7c-af6a-8b19a8c98226"
             
@@ -362,13 +401,15 @@ namespace VsConsoleOutput
             else if ((debugEvent is IDebugThreadDestroyEvent2) || (riidEvent.ToString("B") == "2c3b7532-a36f-4a6e-9072-49be649b8541"))
                 Output.Log("debugEvent is IDebugThreadDestroyEvent2.{0}", attributes); //"IDebugThreadDestroyEvent2","2c3b7532-a36f-4a6e-9072-49be649b8541"
             else if ((debugEvent is IDebugProgramDestroyEvent2) || (riidEvent.ToString("B") == "e147e9e3-6440-4073-a7b7-a65592c714b5"))
+            {
                 Output.Log("debugEvent is IDebugProgramDestroyEvent2.{0}", attributes); //"IDebugProgramDestroyEvent2","e147e9e3-6440-4073-a7b7-a65592c714b5"
+                isAttached = false;
+            }
             else if ((debugEvent is IDebugProcessDestroyEvent2) || (riidEvent.ToString("B") == "3e2a0832-17e1-4886-8c0e-204da242995f"))
                 Output.Log("debugEvent is IDebugProcessDestroyEvent2.{0}", attributes); //"IDebugProcessDestroyEvent2","3e2a0832-17e1-4886-8c0e-204da242995f"
             else if ((debugEvent is IDebugSessionDestroyEvent2) || (riidEvent.ToString("B") == "f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"))
             {
                 Output.Log("debugEvent is IDebugSessionDestroyEvent2.{0}", attributes); //"IDebugSessionDestroyEvent2","f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"            
-                isAttached = false;
             }
 
             else

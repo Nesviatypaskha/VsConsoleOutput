@@ -30,15 +30,20 @@ namespace VsConsoleOutput
                         _loggerPane = dte.ToolWindows.OutputWindow.OutputWindowPanes.Add("VSOutputLogger");
                         _loggerPane.Activate();
                         _loggerPane.Clear();
+                        //_loggerPane.Guid = "204E2A26 - 7BD7 - 4632 - 8043 - 18D94C179103";
                     }
 #endif
                     if (_consolePane == null)
                     {
                         // TODO add pane with GUID)))  {204E2A26-7BD7-4632-8043-18D94C179103}
                         // https://docs.microsoft.com/ru-ru/visualstudio/extensibility/extending-the-output-window?view=vs-2015&redirectedfrom=MSDNs
+
+                        //_consolePane = new OutputWindowPane("{204E2A26-7BD7-4632-8043-18D94C179103}", "Console");
                         _consolePane = dte.ToolWindows.OutputWindow.OutputWindowPanes.Add("Console");
                         _consolePane.Activate();
                         _consolePane.Clear();
+                        //_consolePane.Guid = "{204E2A26-7BD7-4632-8043-18D94C179103}";
+                        Log("_consolePane Guid = ", _consolePane.Guid);
                     }
                 }
             }
