@@ -1,6 +1,7 @@
 ﻿using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,15 +36,16 @@ namespace VsConsoleOutput
 #endif
                     if (_consolePane == null)
                     {
-                        // TODO add pane with GUID)))  {204E2A26-7BD7-4632-8043-18D94C179103}
-                        // https://docs.microsoft.com/ru-ru/visualstudio/extensibility/extending-the-output-window?view=vs-2015&redirectedfrom=MSDNs
+                        IVsOutputWindow output = VsConsoleOutputPackage.GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
+                        Guid customGuid = new Guid("204E2A26-7BD7-4632-8043-18D94C179103");
+                        string customTitle = "Console";
+                        output.CreatePane(ref customGuid, customTitle, 1, 1);
 
-                        //_consolePane = new OutputWindowPane("{204E2A26-7BD7-4632-8043-18D94C179103}", "Console");
-                        _consolePane = dte.ToolWindows.OutputWindow.OutputWindowPanes.Add("Console");
-                        _consolePane.Activate();
-                        _consolePane.Clear();
-                        //_consolePane.Guid = "{204E2A26-7BD7-4632-8043-18D94C179103}";
-                        Log("_consolePane Guid = ", _consolePane.Guid);
+                        IVsOutputWindowPane customPane;
+                        output.GetPane(ref customGuid, out customPane);
+
+                        customPane.OutputString("Console ready");
+                        customPane.Activate();
                     }
                 }
             }
