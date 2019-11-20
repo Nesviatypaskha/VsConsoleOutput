@@ -40,13 +40,9 @@ namespace VsConsoleOutput
         /// </summary>
         public const string PackageGuidString = "f6dfad00-7979-4fd7-b28b-71336c51f20f";
         private static IVsDebugger _debugger;
-        private static IVsDebugger2 _debugger2;
-        private static IVsUIShell _uiShell;
         private static CancellationToken _cancellationToken;
-
         private static DTE _dte;
         private static DTE2 _dte2;
-        private static System.Timers.Timer aTimer;
         #region Package Members
 
         /// <summary>
@@ -58,28 +54,12 @@ namespace VsConsoleOutput
         /// <returns>A task representing the async work of package initialization, or an already completed task if there is none. Do not return null from this method.</returns>
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            // https://docs.microsoft.com/en-us/visualstudio/extensibility/how-to-provide-an-asynchronous-visual-studio-service?view=vs-2019
             // When initialized asynchronously, the current thread may be a background thread at this point.
             // Do any initialization that requires the UI thread after switching to the UI thread.
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
             DebugManager.Instantiate();
             DebugManager.Instance.Advise();
-
-            _debugger2 = GetServiceAsync(typeof(SVsShellDebugger)) as IVsDebugger2;
-            _dte = GetGlobalService(typeof(SDTE)) as DTE;
-
-            DebuggerEvents debuggerEvents = _dte.Events.DebuggerEvents;
-
-            debuggerEvents.OnEnterBreakMode += OnEnterBreakModeHandler;
-            debuggerEvents.OnEnterRunMode += OnEnterRunModeHandler;
-
-            MonitorCommandEvents monitor = new MonitorCommandEvents();
-            monitor.Start(_dte2);
-
-            Output.Log("Extention started");
-            Output.Console("VsConsoleOutput is ready");
-            Output.ClearConsole();
         }
 
         public static DTE getDTE()
@@ -101,19 +81,6 @@ namespace VsConsoleOutput
                 _debugger = GetGlobalService(typeof(SVsShellDebugger)) as IVsDebugger;
             return _debugger;
         }
-        public static IVsDebugger2 getDebugger2()
-        {
-            if (_debugger == null)
-                _debugger2 = GetGlobalService(typeof(SVsShellDebugger)) as IVsDebugger2;
-            return _debugger2;
-        }
-
-        public static IVsUIShell getUIShell()
-        {
-            if (_uiShell == null)
-                _uiShell = GetGlobalService(typeof(SVsUIShell)) as IVsUIShell;
-            return _uiShell;
-        }
 
         protected override int QueryClose(out bool canClose)
         {
@@ -121,7 +88,7 @@ namespace VsConsoleOutput
             canClose = true;
             try
             {
-                //DebugManager.Instance.Unadvise();
+                DebugManager.Instance.Unadvise();
                 hr = base.QueryClose(out canClose);
                 Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(hr);
             }
@@ -131,16 +98,6 @@ namespace VsConsoleOutput
             }
             return hr;
         }
-
-        public static void OnEnterBreakModeHandler(dbgEventReason reason, ref dbgExecutionAction execAction)
-        {
-            Output.Log("OnEnterBreakModeHandler");
-        }
-        public static void OnEnterRunModeHandler(dbgEventReason reason)
-        {
-            Output.Log("OnEnterRunModeHandler");
-        }
-
         #endregion
     }
 }

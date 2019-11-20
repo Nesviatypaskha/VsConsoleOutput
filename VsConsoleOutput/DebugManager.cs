@@ -19,8 +19,7 @@ namespace VsConsoleOutput
 {
     internal sealed class DebugManager : IVsDebuggerEvents, IDebugEventCallback2
     {
-        private DTE _dte;
-        private DTE2 _dte2;
+        private DTE _dte;        
         private readonly IVsDebugger _debugger;
         private readonly IVsDebugger2 _debugger2;
         private IVsSolutionBuildManager _solutionBuildManager;
@@ -37,7 +36,6 @@ namespace VsConsoleOutput
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             _dte = VsConsoleOutputPackage.getDTE();
-            _dte2 = VsConsoleOutputPackage.getDTE2();
             _debugger = VsConsoleOutputPackage.getDebugger();
             isAttached = false;
         }

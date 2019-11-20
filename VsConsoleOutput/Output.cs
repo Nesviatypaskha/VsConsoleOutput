@@ -40,11 +40,8 @@ namespace VsConsoleOutput
                         Guid customGuid = new Guid("204E2A26-7BD7-4632-8043-18D94C179103");
                         string customTitle = "Console";
                         output.CreatePane(ref customGuid, customTitle, 1, 1);
-
                         IVsOutputWindowPane customPane;
                         output.GetPane(ref customGuid, out customPane);
-
-                        customPane.OutputString("Console ready");
                         customPane.Activate();
                     }
                 }
