@@ -8,11 +8,12 @@ namespace c_sharp
     {
         public static StreamWriter RedirectToPipe()
         {
-            FileStream fs = new FileStream("c:\\temp\\MyTest.txt", FileMode.Create);
-            StreamWriter sw = new StreamWriter(fs);
+            Console.WriteLine("DLL FROM EXTENTION...");
+            StreamWriter sw = null;
             NamedPipeServerStream pipeServer = new NamedPipeServerStream("testpipe", PipeDirection.Out);
             if (pipeServer != null)
             {
+                Console.WriteLine("DLL FROM EXTENTION...");
                 Console.Write("Waiting for client connection...");
                 pipeServer.WaitForConnection();
                 try
@@ -24,7 +25,8 @@ namespace c_sharp
                     Console.WriteLine("ERROR: {0}", e.Message);
                 }
             }
-            sw.AutoFlush = true;
+            if (sw != null)
+                sw.AutoFlush = true;
             return sw;
         }
     }

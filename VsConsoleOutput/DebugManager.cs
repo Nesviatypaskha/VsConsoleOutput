@@ -101,46 +101,7 @@ namespace VsConsoleOutput
             return VSConstants.S_OK;
         }
 
-        private void logbreakpoints()
-        {
-            foreach (Breakpoint2 breakpoint2 in _dte.Debugger.Breakpoints)
-            {
-                Output.Log("breakpoint2.FunctionName {0}", breakpoint2.FunctionName);
-                Output.Log("breakpoint2.FileLine {0}", breakpoint2.FileLine);
-                Output.Log("breakpoint2.FunctionLineOffset {0}", breakpoint2.FunctionLineOffset);
-                //tracepoint.Macro = "MACRO";
-                //breakpoint2.Message = "Connected";
-                //breakpoint2.BreakWhenHit = false;
-            }
-        }
 
-        private void addMainBreakpoint()
-        {
-            if (_dte != null)
-            {
-                _dte.Debugger.Breakpoints.Add("Main");
-                foreach (Breakpoint2 breakpoint2 in _dte.Debugger.Breakpoints)
-                {
-                    if (breakpoint2.FunctionName.Contains("Main("))
-                    {
-                        breakpoint2.Message = "Connected";
-                        breakpoint2.BreakWhenHit = false;
-                    }
-                }
-            }
-        }
-        private void SetBreakWhenHit(Breakpoint2 breakpoint, bool value)
-        {
-            var messageStubbed = false;
-            if (value && string.IsNullOrEmpty(breakpoint.Message))
-            {
-                breakpoint.Message = "stub";
-                messageStubbed = true;
-            }
-            breakpoint.BreakWhenHit = value;
-            if (messageStubbed)
-                breakpoint.Message = "";
-        }
 
         static string GetAssemblyLocalPathFrom(Type type)
         {
@@ -206,8 +167,17 @@ namespace VsConsoleOutput
                     string error;
                     uint errorCode;
                     string command = "System.Console.WriteLine(\"IT WORKS!!!\")";
-                    //"Console.SetOut((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(\"helper.dll\").GetType(\"helper.Test\", true, true).GetMethod(\"RedirectToPipe\")" +
-                    //".Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"helper.dll\").GetType(\"helper.Test\", true, true)), new object[] { }));";
+                    //string dllpath = "C:\\Users\\Alex\\source\\repos\\VsConsoleOutput.git\\trunk\\VsConsoleOutput\\bin\\Debug\\c_sharp.dll";
+                    //if ((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(dllpath).GetType("c_sharp.Redirection", true, true).GetMethod("RedirectToPipe").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(dllpath).GetType("c_sharp.Redirection", true, true)), new object[] { }) != null) Console.SetOut((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(dllpath).GetType("c_sharp.Redirection", true, true).GetMethod("RedirectToPipe").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(dllpath).GetType("c_sharp.Redirection", true, true)), new object[] { }));
+
+
+                    string dllpath = "C:\\Users\\Alex\\source\\repos\\VsConsoleOutput.git\\trunk\\VsConsoleOutput\\bin\\Debug\\c_sharp.dll";
+                    command = String.Format("if ((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom({0}).GetType(\"c_sharp.Redirection\", true, true)." +
+                        "GetMethod(\"RedirectToPipe\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom({0}).GetType(\"c_sharp.Redirection\", " +
+                        "true, true)), new object[] { }) != null) Console.SetOut((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom({0}).GetType(\"c_sharp.Redirection\"," +
+                        " true, true).GetMethod(\"RedirectToPipe\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom({0}).GetType(\"c_sharp.Redirection\", " +
+                        "true, true)), new object[] { }))", dllpath);
+
 
                     //command = "(System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom" +
                     //        "(\"c:\\users\\ovnesviatypaskha\\appdata\\local\\microsoft\\visualstudio\\16.0_063ec32dexp\\extensions\\alex\\vsconsoleoutput\\1.0\\VsConsoleOutput.dll\")." +
@@ -266,10 +236,6 @@ namespace VsConsoleOutput
         public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program,
                             IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
         {
-            //if ((thread != null) && (_debug_mode == DBGMODE.DBGMODE_Break) && (!isAttached))
-            //{
-            //    RedirectStdStreams(thread);
-            //}
             if ((debugEvent is IDebugSessionCreateEvent2) || (riidEvent.ToString("D") == "2c2b15b7-fc6d-45b3-9622-29665d964a76"))
                 Output.Log("debugEvent is IDebugSessionCreateEvent2.{0}", attributes); //"IDebugSessionCreateEvent2","2c2b15b7-fc6d-45b3-9622-29665d964a76"
             else if ((debugEvent is IDebugProcessCreateEvent2) || (riidEvent.ToString("D") == "bac3780f-04da-4726-901c-ba6a4633e1ca"))

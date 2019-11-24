@@ -57,7 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="c_sharp">
-      <HintPath>..\c_sharp\bin\Release\netstandard2.0\c_sharp.dll</HintPath>
+      <HintPath>..\c_sharp\bin\Debug\netstandard2.0\c_sharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
   </ItemGroup>
