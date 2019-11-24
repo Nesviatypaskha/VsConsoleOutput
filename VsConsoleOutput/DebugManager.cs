@@ -19,7 +19,7 @@ namespace VsConsoleOutput
 {
     internal sealed class DebugManager : IVsDebuggerEvents, IDebugEventCallback2
     {
-        private DTE _dte;        
+        private DTE _dte;
         private readonly IVsDebugger _debugger;
         private readonly IVsDebugger2 _debugger2;
         private IVsSolutionBuildManager _solutionBuildManager;
@@ -27,8 +27,10 @@ namespace VsConsoleOutput
         private DBGMODE _debug_mode;
         private bool isAttached;
 
+        private string entryFunctionName;
         private EnvDTE80.Commands2 commands;
 
+        Breakpoint2 entryBreakpoint;
         private static DebugManager _instance;
         private static readonly object _padlock = new object();
 
@@ -119,7 +121,7 @@ namespace VsConsoleOutput
                 _dte.Debugger.Breakpoints.Add("Main");
                 foreach (Breakpoint2 breakpoint2 in _dte.Debugger.Breakpoints)
                 {
-                    if(breakpoint2.FunctionName.Contains("Main(" ))
+                    if (breakpoint2.FunctionName.Contains("Main("))
                     {
                         breakpoint2.Message = "Connected";
                         breakpoint2.BreakWhenHit = false;
@@ -173,7 +175,7 @@ namespace VsConsoleOutput
                 enum_FRAMEINFO_FLAGS.FIF_ARGS_TYPES |
                 enum_FRAMEINFO_FLAGS.FIF_ARGS_NAMES |
                 enum_FRAMEINFO_FLAGS.FIF_ARGS_VALUES |
-                enum_FRAMEINFO_FLAGS.FIF_ARGS_ALL 
+                enum_FRAMEINFO_FLAGS.FIF_ARGS_ALL
                 , 0, out frame);
             uint frames;
             frame.GetCount(out frames);
@@ -203,7 +205,18 @@ namespace VsConsoleOutput
                     IDebugExpression2 de;
                     string error;
                     uint errorCode;
-                    if (expressionContext.ParseText("System.Console.WriteLine(\"IT WORKS!!!\")", enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
+                    string command = "System.Console.WriteLine(\"IT WORKS!!!\")";
+                    //"Console.SetOut((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(\"helper.dll\").GetType(\"helper.Test\", true, true).GetMethod(\"RedirectToPipe\")" +
+                    //".Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"helper.dll\").GetType(\"helper.Test\", true, true)), new object[] { }));";
+
+                    //command = "(System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom" +
+                    //        "(\"c:\\users\\ovnesviatypaskha\\appdata\\local\\microsoft\\visualstudio\\16.0_063ec32dexp\\extensions\\alex\\vsconsoleoutput\\1.0\\VsConsoleOutput.dll\")." +
+                    //        "GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\").Invoke(Activator.CreateInstance(System.Reflection.Assembly." +
+                    //        "LoadFrom(\"c:\\users\\ovnesviatypaskha\\appdata\\local\\microsoft\\visualstudio\\16.0_063ec32dexp\\extensions\\alex\\vsconsoleoutput\\1.0\\VsConsoleOutput.dll\")." +
+                    //        "GetType(\"c_sharp.Redirection\", true, true)), new object[] {})";
+                    //if (expressionContext.ParseText("System.Console.WriteLine(\"IT WORKS!!!\")", enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
+
+                    if (expressionContext.ParseText(command, enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
                     {
                         isAttached = true;
                         IDebugProperty2 dp2;
@@ -212,27 +225,51 @@ namespace VsConsoleOutput
                         dp2.GetPropertyInfo(enum_DEBUGPROP_INFO_FLAGS.DEBUGPROP_INFO_ALL, 0, 5000, null, 0, myInfo);
                         var outputTextWriter = myInfo[0].bstrValue;
 
-                        foreach (Breakpoint2 breakpoint2 in _dte.Debugger.Breakpoints)
-                        {
-                            if (breakpoint2.FunctionName.Contains("Main("))
-                            {
-                                breakpoint2.Delete();
-                            }
-                        }
+                        if (entryBreakpoint != null)
+                            entryBreakpoint.Delete();
                     }
                 }
             }
         }
 
+        private void AddTracePoint(IDebugThread2 thread)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            IEnumDebugFrameInfo2 frame;
+            thread.EnumFrameInfo(enum_FRAMEINFO_FLAGS.FIF_FUNCNAME , 0, out frame);
+            uint frames;
+            frame.GetCount(out frames);
+            var frameInfo = new FRAMEINFO[1];
+            uint pceltFetched = 0;
+            while ((frame.Next(1, frameInfo, ref pceltFetched) == VSConstants.S_OK) && (pceltFetched > 0))
+            {
+                var fr = frameInfo[0].m_pFrame as IDebugStackFrame2;
+                if (String.IsNullOrEmpty(frameInfo[0].m_bstrFuncName))
+                {
+                    continue;
+                }
+                string funcName = frameInfo[0].m_bstrFuncName;
+                entryFunctionName = funcName.Substring(funcName.LastIndexOf('.') + 1);
 
-        
+                if (_dte != null)
+                {
+                    _dte.Debugger.Breakpoints.Add(entryFunctionName);
+                    Breakpoint2 breakpoint2 = _dte.Debugger.Breakpoints.Item(_dte.Debugger.Breakpoints.Count) as Breakpoint2;
+                    breakpoint2.Message = "VSOutputConsole connected";
+                    breakpoint2.BreakWhenHit = false;
+                    entryBreakpoint = breakpoint2;
+                }
+            }
+        }
+
+
         public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program,
                             IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
         {
-            if ((thread != null) && (_debug_mode == DBGMODE.DBGMODE_Break) && (!isAttached))
-            {
-                RedirectStdStreams(thread);
-            }
+            //if ((thread != null) && (_debug_mode == DBGMODE.DBGMODE_Break) && (!isAttached))
+            //{
+            //    RedirectStdStreams(thread);
+            //}
             if ((debugEvent is IDebugSessionCreateEvent2) || (riidEvent.ToString("D") == "2c2b15b7-fc6d-45b3-9622-29665d964a76"))
                 Output.Log("debugEvent is IDebugSessionCreateEvent2.{0}", attributes); //"IDebugSessionCreateEvent2","2c2b15b7-fc6d-45b3-9622-29665d964a76"
             else if ((debugEvent is IDebugProcessCreateEvent2) || (riidEvent.ToString("D") == "bac3780f-04da-4726-901c-ba6a4633e1ca"))
@@ -258,18 +295,18 @@ namespace VsConsoleOutput
             {
                 // This is place for place initialisation method 
                 Output.Log("debugEvent is IDebugEntryPointEvent2"); //"IDebugEntryPointEvent2","e8414a3e-1642-48ec-829e-5f4040e16da9"
-                addMainBreakpoint();
-                logbreakpoints();
+                AddTracePoint(thread);
+
+
+                //addMainBreakpoint();
             }
             else if (/*(debugEvent is IDebugBreakpointBoundEvent2Guid) || */(riidEvent.ToString("D") == "1dddb704-cf99-4b8a-b746-dabb01dd13a0"))
             {
                 Output.Log("debugEvent is IDebugBreakpointBoundEvent2Guid.{0}", attributes); //"IDebugBreakpointBoundEvent2Guid ","1dddb704-cf99-4b8a-b746-dabb01dd13a0"
-                logbreakpoints();
             }
             else if (/*(debugEvent is IEnumDebugBoundBreakpoints2) || */(riidEvent.ToString("D") == "501c1e21-c557-48b8-ba30-a1eab0bc4a74"))
             {
                 Output.Log("debugEvent is IEnumDebugBoundBreakpoints2.{0}", attributes); //"IEnumDebugBoundBreakpoints2","501c1e21-c557-48b8-ba30-a1eab0bc4a74"
-                logbreakpoints();
             }
             else if ((debugEvent is IDebugCurrentThreadChangedEvent100) || (riidEvent.ToString("D") == "8764364b-0c52-4c7c-af6a-8b19a8c98226"))
                 Output.Log("debugEvent is IDebugCurrentThreadChangedEvent100 .{0}", attributes); //"IDebugCurrentThreadChangedEvent100  ","8764364b-0c52-4c7c-af6a-8b19a8c98226"
@@ -282,7 +319,7 @@ namespace VsConsoleOutput
                 Output.Log("debugEvent is IDebugProcessContinueEvent100.{0}", attributes); //"IDebugProcessContinueEvent100 ","c703ebea-42e7-4768-85a9-692eecba567b"
                 //RedirectStdStreams(thread);
             }
-                
+
             else if ((debugEvent is IDebugThreadDestroyEvent2) || (riidEvent.ToString("D") == "2c3b7532-a36f-4a6e-9072-49be649b8541"))
                 Output.Log("debugEvent is IDebugThreadDestroyEvent2.{0}", attributes); //"IDebugThreadDestroyEvent2","2c3b7532-a36f-4a6e-9072-49be649b8541"
             else if ((debugEvent is IDebugProgramDestroyEvent2) || (riidEvent.ToString("D") == "e147e9e3-6440-4073-a7b7-a65592c714b5"))
@@ -298,12 +335,10 @@ namespace VsConsoleOutput
             {
                 Output.Log("debugEvent is IDebugMessageEvent2.{0}", attributes); //"IDebugMessageEvent2","3bdb28cf-dbd2-4d24-af03-01072b67eb9e"
                 RedirectStdStreams(thread);
-                logbreakpoints();
             }
             else if ((debugEvent is IDebugProcessDestroyEvent2) || (riidEvent.ToString("D") == "1dddb704-cf99-4b8a-b746-dabb01dd13a0"))
             {
                 Output.Log("debugEvent is IDebugBreakpointBoundEvent2.{0}", attributes); //"IDebugBreakpointBoundEvent2","1dddb704-cf99-4b8a-b746-dabb01dd13a0"
-                logbreakpoints();
             }
             else
                 Output.Log("Event Command.name = {0}.{1}", riidEvent.ToString("D"), attributes);
