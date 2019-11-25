@@ -56,7 +56,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="c_sharp">
+    <Reference Include="c_sharp, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\c_sharp\bin\Debug\netstandard2.0\c_sharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
