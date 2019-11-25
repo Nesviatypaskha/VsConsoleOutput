@@ -186,22 +186,31 @@ namespace VsConsoleOutput
                 {
                     continue;
                 }
+                //"Console.SetOut((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(\"helper.dll\").GetType(\"helper.Test\", true, true).GetMethod(\"RedirectToPipe\")" +
+                //".Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"helper.dll\").GetType(\"helper.Test\", true, true)), new object[] { }));";
+                //string command = "";//"Console.SetOut((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(\"c_sharp.dll\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\")" +
+                                  //".Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"c_sharp.dll\").GetType(\"c_sharp.Redirection\", true, true)), new object[] { }));";
                 string installationPath = GetAssemblyLocalPathFrom(typeof(VsConsoleOutputPackage));
+                // c:\users\ovnesviatypaskha\appdata\local\microsoft\visualstudio\16.0_063ec32dexp\extensions\alex\vsconsoleoutput\1.0\VsConsoleOutput.dll
                 installationPath = installationPath.Replace("VsConsoleOutput.dll", "c_sharp.dll");
                 installationPath = installationPath.Replace("\\", "\\\\");
-                string command = "";
+                string command = "Console.SetOut((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(\"" + installationPath +
+                                 "\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"" + installationPath +
+                                 "\").GetType(\"c_sharp.Redirection\", true, true)), new object[] { }));";
 
-                if (frameInfo[0].m_bstrLanguage == "C#")
-                {
-                    
-                    command = "Console.SetOut((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(\"" + installationPath +
-                              "\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"" + installationPath +
-                              "\").GetType(\"c_sharp.Redirection\", true, true)), new object[] { }));";
-                }
-                else //if (frameInfo[0].m_bstrLanguage == "C#")
-                {
-                    continue;
-                }
+                //if (frameInfo[0].m_bstrLanguage == "C#")
+                //{
+                //    installationPath.Replace("VsConsoleOutput.dll", "c_sharp.dll");
+                //    command = string.Format("(System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(\"{0}\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\")." +
+                //                            "Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"{1}\").GetType(\"c_sharp.Redirection\", true, true)), new object[] {{ }})", installationPath, installationPath);
+                //    command = command.Replace("\\", "\\\\");
+                //    command = command.Replace("\"", "\\\"");
+
+                //}
+                //else //if (frameInfo[0].m_bstrLanguage == "C#")
+                //{
+                //    continue;
+                //}
 
                 IDebugExpressionContext2 expressionContext;
                 fr.GetExpressionContext(out expressionContext);
