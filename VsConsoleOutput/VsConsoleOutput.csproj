@@ -47,7 +47,9 @@
   <ItemGroup>
     <Compile Include="DebugManager.cs" />
     <Compile Include="Output.cs" />
+    <Compile Include="Pipes.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="service\Solution.cs" />
     <Compile Include="VsConsoleOutputPackage.cs" />
   </ItemGroup>
   <ItemGroup>

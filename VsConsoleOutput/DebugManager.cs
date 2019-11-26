@@ -26,6 +26,7 @@ namespace VsConsoleOutput
         private uint _cookie;
         private DBGMODE _debug_mode;
         private bool isAttached;
+        private System.Threading.Thread clientThread;
 
         private EnvDTE80.Commands2 commands;
 
@@ -194,10 +195,13 @@ namespace VsConsoleOutput
                 // c:\users\ovnesviatypaskha\appdata\local\microsoft\visualstudio\16.0_063ec32dexp\extensions\alex\vsconsoleoutput\1.0\VsConsoleOutput.dll
                 installationPath = installationPath.Replace("VsConsoleOutput.dll", "c_sharp.dll");
                 installationPath = installationPath.Replace("\\", "\\\\");
-                string command = "Console.SetOut((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(\"" + installationPath +
-                                 "\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"" + installationPath +
-                                 "\").GetType(\"c_sharp.Redirection\", true, true)), new object[] { }));";
-
+                //string command = "Console.SetOut((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(\"" + installationPath +
+                //                 "\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"" + installationPath +
+                //                 "\").GetType(\"c_sharp.Redirection\", true, true)), new object[] { }));";
+                string command = "System.Reflection.Assembly.LoadFrom(\"" + installationPath +
+                                 "\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe2\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"" + installationPath +
+                                 "\").GetType(\"c_sharp.Redirection\", true, true)), new object[] { });";
+                
                 //if (frameInfo[0].m_bstrLanguage == "C#")
                 //{
                 //    installationPath.Replace("VsConsoleOutput.dll", "c_sharp.dll");
@@ -223,11 +227,16 @@ namespace VsConsoleOutput
                     if (expressionContext.ParseText(command, enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
                     {
                         isAttached = true;
+                        clientThread = new System.Threading.Thread(Pipes.StartClient);
+                        clientThread.Start();
+
                         IDebugProperty2 dp2;
                         var res = de.EvaluateSync(enum_EVALFLAGS.EVAL_RETURNVALUE, 5000, null, out dp2);
                         var myInfo = new DEBUG_PROPERTY_INFO[1];
                         dp2.GetPropertyInfo(enum_DEBUGPROP_INFO_FLAGS.DEBUGPROP_INFO_ALL, 0, 5000, null, 0, myInfo);
                         var outputTextWriter = myInfo[0].bstrValue;
+
+
 
                         foreach (Breakpoint2 breakpoint2 in _dte.Debugger.Breakpoints)
                         {
@@ -241,8 +250,7 @@ namespace VsConsoleOutput
             }
         }
 
-
-
+   
         public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program,
                             IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
         {
@@ -306,6 +314,7 @@ namespace VsConsoleOutput
             else if ((debugEvent is IDebugSessionDestroyEvent2) || (riidEvent.ToString("D") == "f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"))
             {
                 Output.Log("debugEvent is IDebugSessionDestroyEvent2.{0}", attributes); //"IDebugSessionDestroyEvent2","f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"            
+                clientThread.Join();
                 isAttached = false;
             }
             else if ((debugEvent is IDebugMessageEvent2) || (riidEvent.ToString("D") == "3bdb28cf-dbd2-4d24-af03-01072b67eb9e"))

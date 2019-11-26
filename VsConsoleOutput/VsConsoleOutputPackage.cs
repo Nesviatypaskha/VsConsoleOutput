@@ -32,6 +32,7 @@ namespace VsConsoleOutput
     [Guid(VsConsoleOutputPackage.PackageGuidString)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.FirstLaunchSetup_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.ShellInitialized_string, PackageAutoLoadFlags.BackgroundLoad)]
+
     [InstalledProductRegistration("VSColorOutput", "VSColorOutput", "0.1.0", IconResourceID = 400)]
     public sealed class VsConsoleOutputPackage : AsyncPackage
     {
@@ -60,6 +61,7 @@ namespace VsConsoleOutput
 
             DebugManager.Instantiate();
             DebugManager.Instance.Advise();
+            resource.service.Solution.Connect();
         }
 
         public static DTE getDTE()

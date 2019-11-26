@@ -15,11 +15,11 @@ namespace VsConsoleOutput
 #if DEBUG
         private static OutputWindowPane _loggerPane;
 #endif
-        private static OutputWindowPane _consolePane;
+        private static IVsOutputWindowPane _consolePane;
 
         public static void Initialize()
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            //ThreadHelper.ThrowIfNotOnUIThread();
             try
             {
                 DTE2 dte = VsConsoleOutputPackage.getDTE2();
@@ -40,14 +40,15 @@ namespace VsConsoleOutput
                         Guid customGuid = new Guid("204E2A26-7BD7-4632-8043-18D94C179103");
                         string customTitle = "Console";
                         output.CreatePane(ref customGuid, customTitle, 1, 1);
-                        IVsOutputWindowPane customPane;
-                        output.GetPane(ref customGuid, out customPane);
-                        customPane.Activate();
+                        //IVsOutputWindowPane customPane;
+                        output.GetPane(ref customGuid, out _consolePane);
+                        _consolePane.Activate();
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                ex = ex;
                 // TODO: Add catch
             }
         }
@@ -75,8 +76,8 @@ namespace VsConsoleOutput
 #if DEBUG
             try
             {
-                if (_loggerPane == null)
-                    Output.Initialize();
+                //if (_loggerPane == null)
+                //    Output.Initialize();
                 if (string.IsNullOrEmpty(message))
                     return;
                 OutputStringLog(DateTime.Now.ToString() + ": " + message + Environment.NewLine);
@@ -93,8 +94,8 @@ namespace VsConsoleOutput
 #if DEBUG
             try
             { 
-                if (_loggerPane == null)
-                    Output.Initialize();
+                //if (_loggerPane == null)
+                //    Output.Initialize();
                 if (string.IsNullOrEmpty(format))
                     return;
                 OutputStringLog(DateTime.Now.ToString() + ": " + string.Format(format, args) + Environment.NewLine);
@@ -128,8 +129,8 @@ namespace VsConsoleOutput
         {
             try
             {
-                if (_consolePane == null)
-                    Output.Initialize();
+                //if (_consolePane == null)
+                //    Output.Initialize();
                 if (string.IsNullOrEmpty(message))
                     return;
                 OutputStringConsole(DateTime.Now.ToString() + ": " + message + Environment.NewLine);
@@ -144,15 +145,16 @@ namespace VsConsoleOutput
         {
             try
             {
-                if (_consolePane == null)
-                    Output.Initialize();
+                //if (_consolePane == null)
+                //    Output.Initialize();
                 if (string.IsNullOrEmpty(format))
                     return;
                 OutputStringConsole(DateTime.Now.ToString() + ": " + string.Format(format, args) + Environment.NewLine);
             }
-            catch
+            catch (Exception ex)
             {
                 // TODO: Add catch
+                ex = ex;
             }
         }
 
@@ -167,8 +169,9 @@ namespace VsConsoleOutput
                     _consolePane.Activate();
                     _consolePane.OutputString(text);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    System.Diagnostics.Debug.WriteLine(ex.ToString());
                     //TODO: log Exception
                 }
             }
