@@ -26,7 +26,11 @@ namespace VsConsoleOutput
         private uint _cookie;
         private DBGMODE _debug_mode;
         private bool isAttached;
-        private System.Threading.Thread clientThread;
+        //private System.Threading.Thread clientThread;
+        private System.Threading.Thread serverThread;
+
+        private string entryFunctionName;
+        Breakpoint2 entryBreakpoint;
 
         private EnvDTE80.Commands2 commands;
 
@@ -100,47 +104,6 @@ namespace VsConsoleOutput
             return VSConstants.S_OK;
         }
 
-        private void logbreakpoints()
-        {
-            foreach (Breakpoint2 breakpoint2 in _dte.Debugger.Breakpoints)
-            {
-                Output.Log("breakpoint2.FunctionName {0}", breakpoint2.FunctionName);
-                Output.Log("breakpoint2.FileLine {0}", breakpoint2.FileLine);
-                Output.Log("breakpoint2.FunctionLineOffset {0}", breakpoint2.FunctionLineOffset);
-                //tracepoint.Macro = "MACRO";
-                //breakpoint2.Message = "Connected";
-                //breakpoint2.BreakWhenHit = false;
-            }
-        }
-
-        private void addMainBreakpoint()
-        {
-            if (_dte != null)
-            {
-                _dte.Debugger.Breakpoints.Add("Main");
-                foreach (Breakpoint2 breakpoint2 in _dte.Debugger.Breakpoints)
-                {
-                    if (breakpoint2.FunctionName.Contains("Main("))
-                    {
-                        breakpoint2.Message = "Connected";
-                        breakpoint2.BreakWhenHit = false;
-                    }
-                }
-            }
-        }
-        private void SetBreakWhenHit(Breakpoint2 breakpoint, bool value)
-        {
-            var messageStubbed = false;
-            if (value && string.IsNullOrEmpty(breakpoint.Message))
-            {
-                breakpoint.Message = "stub";
-                messageStubbed = true;
-            }
-            breakpoint.BreakWhenHit = value;
-            if (messageStubbed)
-                breakpoint.Message = "";
-        }
-
         static string GetAssemblyLocalPathFrom(Type type)
         {
             string codebase = type.Assembly.CodeBase;
@@ -187,34 +150,14 @@ namespace VsConsoleOutput
                 {
                     continue;
                 }
-                //"Console.SetOut((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(\"helper.dll\").GetType(\"helper.Test\", true, true).GetMethod(\"RedirectToPipe\")" +
-                //".Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"helper.dll\").GetType(\"helper.Test\", true, true)), new object[] { }));";
-                //string command = "";//"Console.SetOut((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(\"c_sharp.dll\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\")" +
-                                  //".Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"c_sharp.dll\").GetType(\"c_sharp.Redirection\", true, true)), new object[] { }));";
+                
                 string installationPath = GetAssemblyLocalPathFrom(typeof(VsConsoleOutputPackage));
-                // c:\users\ovnesviatypaskha\appdata\local\microsoft\visualstudio\16.0_063ec32dexp\extensions\alex\vsconsoleoutput\1.0\VsConsoleOutput.dll
                 installationPath = installationPath.Replace("VsConsoleOutput.dll", "c_sharp.dll");
                 installationPath = installationPath.Replace("\\", "\\\\");
-                //string command = "Console.SetOut((System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(\"" + installationPath +
-                //                 "\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"" + installationPath +
-                //                 "\").GetType(\"c_sharp.Redirection\", true, true)), new object[] { }));";
-                string command = "System.Reflection.Assembly.LoadFrom(\"" + installationPath +
-                                 "\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe2\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"" + installationPath +
-                                 "\").GetType(\"c_sharp.Redirection\", true, true)), new object[] { });";
-                
-                //if (frameInfo[0].m_bstrLanguage == "C#")
-                //{
-                //    installationPath.Replace("VsConsoleOutput.dll", "c_sharp.dll");
-                //    command = string.Format("(System.IO.StreamWriter)System.Reflection.Assembly.LoadFrom(\"{0}\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\")." +
-                //                            "Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"{1}\").GetType(\"c_sharp.Redirection\", true, true)), new object[] {{ }})", installationPath, installationPath);
-                //    command = command.Replace("\\", "\\\\");
-                //    command = command.Replace("\"", "\\\"");
 
-                //}
-                //else //if (frameInfo[0].m_bstrLanguage == "C#")
-                //{
-                //    continue;
-                //}
+                string command = "System.Reflection.Assembly.LoadFrom(\"" + installationPath +
+                                 "\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"" + installationPath +
+                                 "\").GetType(\"c_sharp.Redirection\", true, true)), new object[] { });";
 
                 IDebugExpressionContext2 expressionContext;
                 fr.GetExpressionContext(out expressionContext);
@@ -227,8 +170,8 @@ namespace VsConsoleOutput
                     if (expressionContext.ParseText(command, enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
                     {
                         isAttached = true;
-                        clientThread = new System.Threading.Thread(Pipes.StartClient);
-                        clientThread.Start();
+                        serverThread = new System.Threading.Thread(Pipes.StartServer);
+                        serverThread.Start();
 
                         IDebugProperty2 dp2;
                         var res = de.EvaluateSync(enum_EVALFLAGS.EVAL_RETURNVALUE, 5000, null, out dp2);
@@ -236,28 +179,46 @@ namespace VsConsoleOutput
                         dp2.GetPropertyInfo(enum_DEBUGPROP_INFO_FLAGS.DEBUGPROP_INFO_ALL, 0, 5000, null, 0, myInfo);
                         var outputTextWriter = myInfo[0].bstrValue;
 
-
-
-                        foreach (Breakpoint2 breakpoint2 in _dte.Debugger.Breakpoints)
-                        {
-                            if (breakpoint2.FunctionName.Contains("Main("))
-                            {
-                                breakpoint2.Delete();
-                            }
-                        }
+                        if (entryBreakpoint != null)
+                            entryBreakpoint.Delete();
                     }
                 }
             }
         }
 
-   
+        private void AddTracePoint(IDebugThread2 thread)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            IEnumDebugFrameInfo2 frame;
+            thread.EnumFrameInfo(enum_FRAMEINFO_FLAGS.FIF_FUNCNAME, 0, out frame);
+            uint frames;
+            frame.GetCount(out frames);
+            var frameInfo = new FRAMEINFO[1];
+            uint pceltFetched = 0;
+            while ((frame.Next(1, frameInfo, ref pceltFetched) == VSConstants.S_OK) && (pceltFetched > 0))
+            {
+                var fr = frameInfo[0].m_pFrame as IDebugStackFrame2;
+                if (String.IsNullOrEmpty(frameInfo[0].m_bstrFuncName))
+                {
+                    continue;
+                }
+                string funcName = frameInfo[0].m_bstrFuncName;
+                //test_c_sharp.Program.Main
+                entryFunctionName = funcName.Substring(funcName.LastIndexOf('.') + 1);
+
+                if (_dte != null)
+                {
+                    _dte.Debugger.Breakpoints.Add(entryFunctionName);
+                    Breakpoint2 breakpoint2 = _dte.Debugger.Breakpoints.Item(_dte.Debugger.Breakpoints.Count) as Breakpoint2;
+                    breakpoint2.Message = "VSOutputConsole connected";
+                    breakpoint2.BreakWhenHit = false;
+                    entryBreakpoint = breakpoint2;
+                }
+            }
+        }
         public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program,
                             IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
         {
-            if ((thread != null) && (_debug_mode == DBGMODE.DBGMODE_Break) && (!isAttached))
-            {
-                RedirectStdStreams(thread);
-            }
             if ((debugEvent is IDebugSessionCreateEvent2) || (riidEvent.ToString("D") == "2c2b15b7-fc6d-45b3-9622-29665d964a76"))
                 Output.Log("debugEvent is IDebugSessionCreateEvent2.{0}", attributes); //"IDebugSessionCreateEvent2","2c2b15b7-fc6d-45b3-9622-29665d964a76"
             else if ((debugEvent is IDebugProcessCreateEvent2) || (riidEvent.ToString("D") == "bac3780f-04da-4726-901c-ba6a4633e1ca"))
@@ -283,7 +244,7 @@ namespace VsConsoleOutput
             {
                 // This is place for place initialisation method 
                 Output.Log("debugEvent is IDebugEntryPointEvent2"); //"IDebugEntryPointEvent2","e8414a3e-1642-48ec-829e-5f4040e16da9"
-                addMainBreakpoint();
+                AddTracePoint(thread);
             }
             else if (/*(debugEvent is IDebugBreakpointBoundEvent2Guid) || */(riidEvent.ToString("D") == "1dddb704-cf99-4b8a-b746-dabb01dd13a0"))
             {
@@ -314,7 +275,7 @@ namespace VsConsoleOutput
             else if ((debugEvent is IDebugSessionDestroyEvent2) || (riidEvent.ToString("D") == "f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"))
             {
                 Output.Log("debugEvent is IDebugSessionDestroyEvent2.{0}", attributes); //"IDebugSessionDestroyEvent2","f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"            
-                clientThread.Join();
+                //clientThread.Join();
                 isAttached = false;
             }
             else if ((debugEvent is IDebugMessageEvent2) || (riidEvent.ToString("D") == "3bdb28cf-dbd2-4d24-af03-01072b67eb9e"))

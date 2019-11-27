@@ -8,32 +8,31 @@ using System.Threading.Tasks;
 
 namespace VsConsoleOutput
 {
+    public delegate void DelegateMessage(string Reply);
     class Pipes
     {
-        public static void StartClient()
+        private static NamedPipeServerStream pipeServer;
+        
+        public static void StartServer()
         {
-            using (NamedPipeClientStream pipeClient =
-                new NamedPipeClientStream(".", "testpipe", PipeDirection.In))
+            try
             {
-
-                // Connect to the pipe or wait until the pipe is available.
-                Output.Console("Attempting to connect to pipe...");
-                pipeClient.Connect();
-
-                Output.Console("Connected to pipe.");
-                Output.Console("There are currently {0} pipe server instances open.",
-                   pipeClient.NumberOfServerInstances);
-                using (StreamReader sr = new StreamReader(pipeClient))
+                NamedPipeServerStream pipeServer = new NamedPipeServerStream("VSConsoleOutputPipe", PipeDirection.In);
+                pipeServer.WaitForConnection();
+                using (StreamReader sr = new StreamReader(pipeServer))
                 {
                     // Display the read text to the console
                     string temp;
                     while ((temp = sr.ReadLine()) != null)
                     {
-                        Output.Console("Received from server: {0}", temp);
+                        Output.Console(temp);
                     }
                 }
             }
-            Output.Console("Press Enter to continue...");
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
+            }
         }
     }
 }

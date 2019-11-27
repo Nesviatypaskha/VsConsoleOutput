@@ -19,20 +19,19 @@ namespace VsConsoleOutput
 
         public static void Initialize()
         {
-            //ThreadHelper.ThrowIfNotOnUIThread();
             try
             {
                 DTE2 dte = VsConsoleOutputPackage.getDTE2();
                 if ((dte != null) && (VsConsoleOutputPackage.getDTE2() != null))
                 {
 #if DEBUG
-                    if (_loggerPane == null)
-                    {
-                        _loggerPane = dte.ToolWindows.OutputWindow.OutputWindowPanes.Add("VSOutputLogger");
-                        _loggerPane.Activate();
-                        _loggerPane.Clear();
-                        //_loggerPane.Guid = "204E2A26 - 7BD7 - 4632 - 8043 - 18D94C179103";
-                    }
+                    //if (_loggerPane == null)
+                    //{
+                    //    _loggerPane = dte.ToolWindows.OutputWindow.OutputWindowPanes.Add("VSOutputLogger");
+                    //    _loggerPane.Activate();
+                    //    _loggerPane.Clear();
+                    //    //_loggerPane.Guid = "204E2A26 - 7BD7 - 4632 - 8043 - 18D94C179103";
+                    //}
 #endif
                     if (_consolePane == null)
                     {
@@ -40,7 +39,7 @@ namespace VsConsoleOutput
                         Guid customGuid = new Guid("204E2A26-7BD7-4632-8043-18D94C179103");
                         string customTitle = "Console";
                         output.CreatePane(ref customGuid, customTitle, 1, 1);
-                        //IVsOutputWindowPane customPane;
+                        
                         output.GetPane(ref customGuid, out _consolePane);
                         _consolePane.Activate();
                     }
@@ -48,8 +47,7 @@ namespace VsConsoleOutput
             }
             catch (Exception ex)
             {
-                ex = ex;
-                // TODO: Add catch
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
             }
         }
 
@@ -76,15 +74,13 @@ namespace VsConsoleOutput
 #if DEBUG
             try
             {
-                //if (_loggerPane == null)
-                //    Output.Initialize();
                 if (string.IsNullOrEmpty(message))
                     return;
                 OutputStringLog(DateTime.Now.ToString() + ": " + message + Environment.NewLine);
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: Add catch
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
             }
 #endif
         }
@@ -94,23 +90,20 @@ namespace VsConsoleOutput
 #if DEBUG
             try
             { 
-                //if (_loggerPane == null)
-                //    Output.Initialize();
+
                 if (string.IsNullOrEmpty(format))
                     return;
                 OutputStringLog(DateTime.Now.ToString() + ": " + string.Format(format, args) + Environment.NewLine);
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: Add catch
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
             }
 #endif
         }
 #if DEBUG
         private static void OutputStringLog(string text)
         {
-            // TODO add timer System.Timer
-            ThreadHelper.ThrowIfNotOnUIThread("VSoutput.Logger.OutputString");
             if (_loggerPane != null)
             {
                 try
@@ -118,9 +111,9 @@ namespace VsConsoleOutput
                     _loggerPane.Activate();
                     _loggerPane.OutputString(text);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    //TODO: log Exception
+                    System.Diagnostics.Debug.WriteLine(ex.ToString());
                 }
             }
         }
@@ -129,15 +122,13 @@ namespace VsConsoleOutput
         {
             try
             {
-                //if (_consolePane == null)
-                //    Output.Initialize();
                 if (string.IsNullOrEmpty(message))
                     return;
-                OutputStringConsole(DateTime.Now.ToString() + ": " + message + Environment.NewLine);
+                OutputStringConsole( message + Environment.NewLine);
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: Add catch
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
             }
         }
 
@@ -145,23 +136,18 @@ namespace VsConsoleOutput
         {
             try
             {
-                //if (_consolePane == null)
-                //    Output.Initialize();
                 if (string.IsNullOrEmpty(format))
                     return;
-                OutputStringConsole(DateTime.Now.ToString() + ": " + string.Format(format, args) + Environment.NewLine);
+                OutputStringConsole(string.Format(format, args) + Environment.NewLine);
             }
             catch (Exception ex)
             {
-                // TODO: Add catch
-                ex = ex;
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
             }
         }
 
         private static void OutputStringConsole(string text)
         {
-            // TODO add timer System.Timer
-            //ThreadHelper.ThrowIfNotOnUIThread("VSoutput.Logger.OutputStringConsole");
             if (_consolePane != null)
             {
                 try
@@ -172,7 +158,6 @@ namespace VsConsoleOutput
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine(ex.ToString());
-                    //TODO: log Exception
                 }
             }
         }

@@ -61,7 +61,11 @@ namespace VsConsoleOutput
 
             DebugManager.Instantiate();
             DebugManager.Instance.Advise();
-            resource.service.Solution.Connect();
+            //resource.service.Solution.Connect();
+            Output.Initialize();
+
+
+
         }
 
         public static DTE getDTE()

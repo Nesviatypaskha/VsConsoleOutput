@@ -1,33 +1,39 @@
 ﻿using System;
 using System.IO;
 using System.IO.Pipes;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace c_sharp
 {
     public class Redirection
     {
-        public static StreamWriter RedirectToPipe()
+        private static NamedPipeClientStream pipeClient;
+
+        public static void RedirectToPipe()
         {
-            Console.WriteLine("DLL FROM EXTENTION...");
-            StreamWriter sw = null;
-            NamedPipeServerStream pipeServer = new NamedPipeServerStream("testpipe", PipeDirection.Out);
-            if (pipeServer != null)
+            pipeClient = new NamedPipeClientStream(".", "VSConsoleOutputPipe", PipeDirection.Out);
+            if (pipeClient != null)
             {
-                Console.WriteLine("DLL FROM EXTENTION...");
-                Console.Write("Waiting for client connection...");
-                pipeServer.WaitForConnection();
-                try
+                Console.WriteLine("Please see console in Visual Studio output");
+                pipeClient.Connect(50);
+                if (pipeClient.IsConnected)
                 {
-                    sw = new StreamWriter(pipeServer);
-                }
-                catch (IOException e)
-                {
-                    Console.WriteLine("ERROR: {0}", e.Message);
+                    try
+                    {
+                        StreamWriter sw = new StreamWriter(pipeClient);
+                        if (sw != null)
+                        {
+                            sw.AutoFlush = true;
+                            Console.SetOut(sw);
+                        }
+                    }
+                    catch (IOException e)
+                    {
+                        Console.WriteLine("ERROR: {0}", e.Message);
+                    }
                 }
             }
-            if (sw != null)
-                sw.AutoFlush = true;
-            return sw;
         }
     }
 }
