@@ -3,7 +3,7 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
-using VsConsoleOutput;
+using VSConsoleOutputBeta;
 
 namespace resource.service
 {

@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VsConsoleOutput
+namespace VSConsoleOutputBeta
 {
     public static class Output
     {
@@ -21,21 +21,20 @@ namespace VsConsoleOutput
         {
             try
             {
-                DTE2 dte = VsConsoleOutputPackage.getDTE2();
-                if ((dte != null) && (VsConsoleOutputPackage.getDTE2() != null))
+                DTE2 dte = VSConsoleOutputBetaPackage.getDTE2();
+                if ((dte != null) && (VSConsoleOutputBetaPackage.getDTE2() != null))
                 {
 #if DEBUG
-                    //if (_loggerPane == null)
-                    //{
-                    //    _loggerPane = dte.ToolWindows.OutputWindow.OutputWindowPanes.Add("VSOutputLogger");
-                    //    _loggerPane.Activate();
-                    //    _loggerPane.Clear();
-                    //    //_loggerPane.Guid = "204E2A26 - 7BD7 - 4632 - 8043 - 18D94C179103";
-                    //}
+                    if (_loggerPane == null)
+                    {
+                        _loggerPane = dte.ToolWindows.OutputWindow.OutputWindowPanes.Add("VSOutputLogger");
+                        _loggerPane.Activate();
+                        _loggerPane.Clear();
+                    }
 #endif
                     if (_consolePane == null)
                     {
-                        IVsOutputWindow output = VsConsoleOutputPackage.GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
+                        IVsOutputWindow output = VSConsoleOutputBetaPackage.GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
                         Guid customGuid = new Guid("204E2A26-7BD7-4632-8043-18D94C179103");
                         string customTitle = "Console";
                         output.CreatePane(ref customGuid, customTitle, 1, 1);
@@ -104,6 +103,10 @@ namespace VsConsoleOutput
 #if DEBUG
         private static void OutputStringLog(string text)
         {
+            if (_loggerPane == null)
+            {
+                Initialize();
+            }
             if (_loggerPane != null)
             {
                 try
@@ -148,6 +151,10 @@ namespace VsConsoleOutput
 
         private static void OutputStringConsole(string text)
         {
+            if (_consolePane == null)
+            {
+                Initialize();
+            }
             if (_consolePane != null)
             {
                 try

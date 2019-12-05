@@ -12,7 +12,7 @@ namespace c_sharp
 
         public static void RedirectToPipe()
         {
-            pipeClient = new NamedPipeClientStream(".", "VSConsoleOutputPipe", PipeDirection.Out);
+            pipeClient = new NamedPipeClientStream(".", "VSConsoleOutputBetaPipe", PipeDirection.Out);
             if (pipeClient != null)
             {
                 Console.WriteLine("Please see console in Visual Studio output");

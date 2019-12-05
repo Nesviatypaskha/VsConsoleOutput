@@ -6,9 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VsConsoleOutput
+namespace VSConsoleOutputBeta
 {
-    public delegate void DelegateMessage(string Reply);
     class Pipes
     {
         private static NamedPipeServerStream pipeServer;
@@ -17,7 +16,7 @@ namespace VsConsoleOutput
         {
             try
             {
-                NamedPipeServerStream pipeServer = new NamedPipeServerStream("VSConsoleOutputPipe", PipeDirection.In);
+                NamedPipeServerStream pipeServer = new NamedPipeServerStream("VSConsoleOutputBetaPipe", PipeDirection.In);
                 pipeServer.WaitForConnection();
                 using (StreamReader sr = new StreamReader(pipeServer))
                 {

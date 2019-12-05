@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
 
-namespace VsConsoleOutput
+namespace VSConsoleOutputBeta
 {
     /// <summary>
     /// This is the class that implements the package exposed by this assembly.
@@ -29,19 +29,23 @@ namespace VsConsoleOutput
     /// </para>
     /// </remarks>
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
-    [Guid(VsConsoleOutputPackage.PackageGuidString)]
+    [Guid(VSConsoleOutputBetaPackage.PackageGuidString)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.FirstLaunchSetup_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.ShellInitialized_string, PackageAutoLoadFlags.BackgroundLoad)]
+    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string, PackageAutoLoadFlags.BackgroundLoad)]
+    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasMultipleProjects_string, PackageAutoLoadFlags.BackgroundLoad)]
+    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasSingleProject_string, PackageAutoLoadFlags.BackgroundLoad)]
 
-    [InstalledProductRegistration("VSColorOutput", "VSColorOutput", "0.1.0", IconResourceID = 400)]
-    public sealed class VsConsoleOutputPackage : AsyncPackage
+    [InstalledProductRegistration("VSConsoleOutputBeta", "VSConsoleOutputBeta", "0.1.0", IconResourceID = 400)]
+    public sealed class VSConsoleOutputBetaPackage : AsyncPackage
     {
         /// <summary>
-        /// VsConsoleOutputPackage GUID string.
+        /// VSConsoleOutputBetaPackage GUID string.
         /// </summary>
         public const string PackageGuidString = "f6dfad00-7979-4fd7-b28b-71336c51f20f";
         private static IVsDebugger _debugger;
         private static CancellationToken _cancellationToken;
+        private System.Threading.Thread serverThread;
         private static DTE _dte;
         private static DTE2 _dte2;
         #region Package Members
@@ -62,10 +66,10 @@ namespace VsConsoleOutput
             DebugManager.Instantiate();
             DebugManager.Instance.Advise();
             //resource.service.Solution.Connect();
-            Output.Initialize();
+            //Output.Initialize();
 
-
-
+            serverThread = new System.Threading.Thread(Pipes.StartServer);
+            serverThread.Start();
         }
 
         public static DTE getDTE()

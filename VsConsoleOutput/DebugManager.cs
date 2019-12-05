@@ -15,7 +15,7 @@ using Process = System.Diagnostics.Process;
 using System.Runtime.InteropServices;
 using Task = System.Threading.Tasks.Task;
 
-namespace VsConsoleOutput
+namespace VSConsoleOutputBeta
 {
     internal sealed class DebugManager : IVsDebuggerEvents, IDebugEventCallback2
     {
@@ -40,8 +40,8 @@ namespace VsConsoleOutput
         public DebugManager()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            _dte = VsConsoleOutputPackage.getDTE();
-            _debugger = VsConsoleOutputPackage.getDebugger();
+            _dte = VSConsoleOutputBetaPackage.getDTE();
+            _debugger = VSConsoleOutputBetaPackage.getDebugger();
             isAttached = false;
         }
 
@@ -151,8 +151,12 @@ namespace VsConsoleOutput
                     continue;
                 }
                 
-                string installationPath = GetAssemblyLocalPathFrom(typeof(VsConsoleOutputPackage));
-                installationPath = installationPath.Replace("VsConsoleOutput.dll", "c_sharp.dll");
+                string installationPath = GetAssemblyLocalPathFrom(typeof(VSConsoleOutputBetaPackage));
+                if (frameInfo[0].m_bstrLanguage == "C#")
+                {
+                    installationPath = installationPath.Replace("VSConsoleOutputBeta.dll", "c_sharp.dll");
+                }
+
                 installationPath = installationPath.Replace("\\", "\\\\");
 
                 string command = "System.Reflection.Assembly.LoadFrom(\"" + installationPath +
@@ -170,9 +174,9 @@ namespace VsConsoleOutput
                     if (expressionContext.ParseText(command, enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
                     {
                         isAttached = true;
-                        serverThread = new System.Threading.Thread(Pipes.StartServer);
-                        serverThread.Start();
-
+                        //serverThread = new System.Threading.Thread(Pipes.StartServer);
+                        //serverThread.Start();
+                        Output.Console("VSOutputConsole ready");
                         IDebugProperty2 dp2;
                         var res = de.EvaluateSync(enum_EVALFLAGS.EVAL_RETURNVALUE, 5000, null, out dp2);
                         var myInfo = new DEBUG_PROPERTY_INFO[1];
