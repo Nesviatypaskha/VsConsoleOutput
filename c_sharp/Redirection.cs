@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.IO.Pipes;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace c_sharp
 {
