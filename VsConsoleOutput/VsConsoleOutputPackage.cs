@@ -68,8 +68,8 @@ namespace VSConsoleOutputBeta
             //resource.service.Solution.Connect();
             //Output.Initialize();
 
-            serverThread = new System.Threading.Thread(Pipes.StartServer);
-            serverThread.Start();
+            //serverThread = new System.Threading.Thread(Pipes.StartServer);
+            //serverThread.Start();
         }
 
         public static DTE getDTE()
