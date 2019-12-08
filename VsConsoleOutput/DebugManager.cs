@@ -27,11 +27,11 @@ namespace VSConsoleOutputBeta
         private DBGMODE _debug_mode;
         private bool isAttached;
         private bool added;
+        private const string bpMessage = "VSOutputConsole connected";
         //private System.Threading.Thread clientThread;
         private System.Threading.Thread serverThread;
 
         private string entryFunctionName;
-        Breakpoint2 entryBreakpoint;
 
         private static DebugManager _instance;
         private static readonly object _padlock = new object();
@@ -169,10 +169,13 @@ namespace VSConsoleOutputBeta
                             dp2.GetPropertyInfo(enum_DEBUGPROP_INFO_FLAGS.DEBUGPROP_INFO_ALL, 0, 5000, null, 0, myInfo);
                             var outputTextWriter = myInfo[0].bstrValue;
 
-                            if (entryBreakpoint != null)
+                            foreach (Breakpoint2 bp in _dte.Debugger.Breakpoints)
                             {
-                                entryBreakpoint.Delete();
-                                entryBreakpoint = null;
+                                if (bp.Message == bpMessage)
+                                {
+                                    bp.Delete();
+                                    break;
+                                }
                             }
                         }
                     }
@@ -194,26 +197,22 @@ namespace VSConsoleOutputBeta
                     uint pceltFetched = 0;
                     while ((frame.Next(1, frameInfo, ref pceltFetched) == VSConstants.S_OK) && (pceltFetched > 0))
                     {
-                        if (entryBreakpoint == null)
+                        var fr = frameInfo[0].m_pFrame as IDebugStackFrame2;
+                        if (String.IsNullOrEmpty(frameInfo[0].m_bstrFuncName))
                         {
-                            var fr = frameInfo[0].m_pFrame as IDebugStackFrame2;
-                            if (String.IsNullOrEmpty(frameInfo[0].m_bstrFuncName))
-                            {
-                                continue;
-                            }
-                            string funcName = frameInfo[0].m_bstrFuncName;
-                            entryFunctionName = funcName.Substring(funcName.LastIndexOf('.') + 1);
-
-                            if (_dte != null)
-                            {
-                                _dte.Debugger.Breakpoints.Add(entryFunctionName);
-                                Breakpoint2 breakpoint2 = _dte.Debugger.Breakpoints.Item(_dte.Debugger.Breakpoints.Count) as Breakpoint2;
-                                breakpoint2.Message = "VSOutputConsole connected";
-                                breakpoint2.BreakWhenHit = false;
-                                entryBreakpoint = breakpoint2;
-                                added = true;
-                            }
+                            continue;
                         }
+                        string funcName = frameInfo[0].m_bstrFuncName;
+                        entryFunctionName = funcName.Substring(funcName.LastIndexOf('.') + 1);
+
+                        if (_dte != null)
+                        {
+                            _dte.Debugger.Breakpoints.Add(entryFunctionName);
+                            Breakpoint2 breakpoint2 = _dte.Debugger.Breakpoints.Item(_dte.Debugger.Breakpoints.Count) as Breakpoint2;
+                            breakpoint2.Message = bpMessage;
+                            breakpoint2.BreakWhenHit = false;
+                            added = true;
+                        }   
                     }
                 }
             }
