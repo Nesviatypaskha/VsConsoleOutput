@@ -26,9 +26,9 @@ namespace c_sharp
                             Console.SetOut(sw);
                         }
                     }
-                    catch (IOException e)
+                    catch (Exception ex)
                     {
-                        Console.WriteLine("ERROR: {0}", e.Message);
+                        System.Diagnostics.Debug.WriteLine(ex.ToString());
                     }
                 }
             }
