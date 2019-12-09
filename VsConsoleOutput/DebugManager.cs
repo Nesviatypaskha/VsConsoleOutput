@@ -28,7 +28,6 @@ namespace VSConsoleOutputBeta
         private bool isAttached;
         private bool added;
         private const string bpMessage = "VSOutputConsole connected";
-        //private System.Threading.Thread clientThread;
         private System.Threading.Thread serverThread;
 
         private string entryFunctionName;
@@ -218,7 +217,7 @@ namespace VSConsoleOutputBeta
             }
             catch (Exception ex)
             {
-
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
             }
         }
         public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program,

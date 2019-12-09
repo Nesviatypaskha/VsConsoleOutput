@@ -65,11 +65,6 @@ namespace VSConsoleOutputBeta
 
             DebugManager.Instantiate();
             DebugManager.Instance.Advise();
-            //resource.service.Solution.Connect();
-            //Output.Initialize();
-
-            //serverThread = new System.Threading.Thread(Pipes.StartServer);
-            //serverThread.Start();
         }
 
         public static DTE getDTE()
@@ -104,7 +99,7 @@ namespace VSConsoleOutputBeta
             }
             catch (Exception ex)
             {
-                // TODO: catch
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
             }
             return hr;
         }
