@@ -24,7 +24,7 @@ namespace VSConsoleOutputBeta
                     string temp;
                     while ((temp = sr.ReadLine()) != null)
                     {
-                        Output.Console(temp);
+                        OutputText.Write("Console", temp);
                     }
                 }
             }

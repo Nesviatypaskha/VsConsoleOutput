@@ -10,37 +10,53 @@ using System.Threading.Tasks;
 
 namespace VSConsoleOutputBeta
 {
-    public static class Output
+    public static class OutputText
     {
-#if DEBUG
-        private static OutputWindowPane _loggerPane;
-#endif
-        private static IVsOutputWindowPane _consolePane;
+        public static void WriteInNewPane(DTE2 dte2, string name, string message, Guid guid = new Guid())
+        {   
+            if (dte2 != null)
+            {
+                IVsOutputWindow output = VSConsoleOutputBetaPackage.GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
+                Guid customGuid = new Guid("204E2A26-7BD7-4632-8043-18D94C179103");
+                string customTitle = "Console";
+                output.CreatePane(ref customGuid, customTitle, 1, 1);
+                IVsOutputWindowPane outputPane;
+                output.GetPane(ref customGuid, out outputPane);
+                outputPane.OutputString(message + "\n");
+                outputPane.Activate();
+            }
+        }
 
-        public static void Initialize()
+        public static void Write(string name, string message)
         {
+#if !DEBUG
+            if (name == "VSOutputDebugLog")
+            {
+                return;
+            }
+#endif
             try
             {
-                DTE2 dte = VSConsoleOutputBetaPackage.getDTE2();
-                if ((dte != null) && (VSConsoleOutputBetaPackage.getDTE2() != null))
+                DTE2 dte2 = Package.GetGlobalService(typeof(SDTE)) as DTE2;
+                if (dte2 != null)
                 {
-#if DEBUG
-                    if (_loggerPane == null)
+                    OutputWindowPanes panes = dte2.ToolWindows.OutputWindow.OutputWindowPanes;
+                    foreach (OutputWindowPane pane in panes)
                     {
-                        _loggerPane = dte.ToolWindows.OutputWindow.OutputWindowPanes.Add("VSOutputLogger");
-                        _loggerPane.Activate();
-                        _loggerPane.Clear();
+                        if (pane.Name == name)
+                        {
+                            pane.OutputString(message + "\n");
+                            pane.Activate();
+                            return;
+                        }
                     }
-#endif
-                    if (_consolePane == null)
+                    if (name == "Console")
                     {
-                        IVsOutputWindow output = VSConsoleOutputBetaPackage.GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
-                        Guid customGuid = new Guid("204E2A26-7BD7-4632-8043-18D94C179103");
-                        string customTitle = "Console";
-                        output.CreatePane(ref customGuid, customTitle, 1, 1);
-                        
-                        output.GetPane(ref customGuid, out _consolePane);
-                        _consolePane.Activate();
+                        WriteInNewPane(dte2, name, message, new Guid("204E2A26-7BD7-4632-8043-18D94C179103"));
+                    }
+                    else
+                    {
+                        WriteInNewPane(dte2, name, message);
                     }
                 }
             }
@@ -49,6 +65,15 @@ namespace VSConsoleOutputBeta
                 System.Diagnostics.Debug.WriteLine(ex.ToString());
             }
         }
+
+
+
+#if DEBUG
+        private static OutputWindowPane _loggerPane;
+#endif
+        private static IVsOutputWindowPane _consolePane;
+
+
 
         public static void ActivateConsole()
         {
@@ -103,10 +128,6 @@ namespace VSConsoleOutputBeta
 #if DEBUG
         private static void OutputStringLog(string text)
         {
-            if (_loggerPane == null)
-            {
-                Initialize();
-            }
             if (_loggerPane != null)
             {
                 try
@@ -151,10 +172,6 @@ namespace VSConsoleOutputBeta
 
         private static void OutputStringConsole(string text)
         {
-            if (_consolePane == null)
-            {
-                Initialize();
-            }
             if (_consolePane != null)
             {
                 try
