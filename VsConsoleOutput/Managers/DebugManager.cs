@@ -21,7 +21,6 @@ namespace VSConsoleOutputBeta
         private static DebugManager m_instance;
         private static readonly object m_padlock = new object();
         
-
         public DebugManager()
         {
             m_dte = Package.GetGlobalService(typeof(SDTE)) as DTE;
@@ -74,32 +73,7 @@ namespace VSConsoleOutputBeta
             if (!m_attached && (thread != null))
             {
                 IEnumDebugFrameInfo2 frame;
-                thread.EnumFrameInfo(
-                    enum_FRAMEINFO_FLAGS.FIF_LANGUAGE |
-                    enum_FRAMEINFO_FLAGS.FIF_FRAME |
-                    enum_FRAMEINFO_FLAGS.FIF_FUNCNAME |
-                    enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_MODULE |
-                    enum_FRAMEINFO_FLAGS.FIF_ARGS |
-                    enum_FRAMEINFO_FLAGS.FIF_MODULE |
-                    enum_FRAMEINFO_FLAGS.FIF_DEBUGINFO |
-                    enum_FRAMEINFO_FLAGS.FIF_STALECODE |
-                    enum_FRAMEINFO_FLAGS.FIF_FLAGS |
-                    enum_FRAMEINFO_FLAGS.FIF_DEBUG_MODULEP |
-                    enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_FORMAT |
-                    enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_MODULE |
-                    enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_LINES |
-                    enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_OFFSET |
-                    enum_FRAMEINFO_FLAGS.FIF_FILTER_INCLUDE_ALL |
-                    enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_ARGS_TYPES |
-                    enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_ARGS_NAMES |
-                    enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_ARGS_ALL |
-                    enum_FRAMEINFO_FLAGS.FIF_ARGS_TYPES |
-                    enum_FRAMEINFO_FLAGS.FIF_ARGS_NAMES |
-                    enum_FRAMEINFO_FLAGS.FIF_ARGS_VALUES |
-                    enum_FRAMEINFO_FLAGS.FIF_ARGS_ALL
-                    , 0, out frame);
-                uint frames;
-                frame.GetCount(out frames);
+                thread.EnumFrameInfo(enum_FRAMEINFO_FLAGS.FIF_LANGUAGE | enum_FRAMEINFO_FLAGS.FIF_FRAME, 0, out frame);
                 var frameInfo = new FRAMEINFO[1];
                 uint pceltFetched = 0;
                 while ((frame.Next(1, frameInfo, ref pceltFetched) == VSConstants.S_OK) && (pceltFetched > 0))
@@ -118,8 +92,6 @@ namespace VSConsoleOutputBeta
                         command = "System.Reflection.Assembly.LoadFrom(\"" + installationPath +
                                   "\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"" + installationPath +
                                   "\").GetType(\"c_sharp.Redirection\", true, true)), new object[] { });";
-
-
                         IDebugExpressionContext2 expressionContext;
                         fr.GetExpressionContext(out expressionContext);
                         if (expressionContext != null)
@@ -130,11 +102,9 @@ namespace VSConsoleOutputBeta
 
                             if (expressionContext.ParseText(command, enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
                             {
-                                m_serverThread = new System.Threading.Thread(Pipes.StartServer);
+                                m_serverThread = new System.Threading.Thread(InputPipe.StartServer);
                                 m_serverThread.Start();
                                 m_attached = true;
-                                OutputText.Write("Console", "VSOutputConsole ready new");
-                                OutputText.Console("VSOutputConsole ready");
                                 IDebugProperty2 dp2;
                                 de.EvaluateSync(enum_EVALFLAGS.EVAL_RETURNVALUE, 5000, null, out dp2);
                                 RemoveBraekpoint();
@@ -200,17 +170,15 @@ namespace VSConsoleOutputBeta
         public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program,
                             IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
         {
-         
             if ((debugEvent is IDebugEntryPointEvent2) || (riidEvent.ToString("D") == "e8414a3e-1642-48ec-829e-5f4040e16da9"))
             {
                 // This is place for place initialisation method 
-                OutputText.Log("debugEvent is IDebugEntryPointEvent2"); //"IDebugEntryPointEvent2","e8414a3e-1642-48ec-829e-5f4040e16da9"
-                OutputText.Write("VSOutputDebugLog", "----------------------- IDebugEntryPointEvent2 new");
+                OutputText.Write("VSOutputDebugLog", "debugEvent is IDebugEntryPointEvent2");
                 AddTracePoint(thread);
             }
             else if ((debugEvent is IDebugSessionDestroyEvent2) || (riidEvent.ToString("D") == "f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"))
             {
-                OutputText.Log("debugEvent is IDebugSessionDestroyEvent2.{0}", attributes); //"IDebugSessionDestroyEvent2","f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"            
+                OutputText.Write("VSOutputDebugLog", "debugEvent is IDebugSessionDestroyEvent2"); //"IDebugSessionDestroyEvent2","f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"            
                 if ((m_serverThread != null) && m_serverThread.IsAlive)
                 {
                     m_serverThread.Join();
@@ -221,7 +189,7 @@ namespace VSConsoleOutputBeta
             }
             else if ((debugEvent is IDebugMessageEvent2) || (riidEvent.ToString("D") == "3bdb28cf-dbd2-4d24-af03-01072b67eb9e"))
             {
-                OutputText.Log("debugEvent is IDebugMessageEvent2.{0}", attributes); //"IDebugMessageEvent2","3bdb28cf-dbd2-4d24-af03-01072b67eb9e"
+                OutputText.Write("VSOutputDebugLog", "debugEvent is IDebugSessionDestroyEvent2"); //"IDebugMessageEvent2","3bdb28cf-dbd2-4d24-af03-01072b67eb9e"
                 RedirectStdStreams(thread);
             }
             return VSConstants.S_OK;

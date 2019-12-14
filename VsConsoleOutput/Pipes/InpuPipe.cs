@@ -8,10 +8,8 @@ using System.Threading.Tasks;
 
 namespace VSConsoleOutputBeta
 {
-    class Pipes
+    class InputPipe
     {
-        private static NamedPipeServerStream pipeServer;
-        
         public static void StartServer()
         {
             try
