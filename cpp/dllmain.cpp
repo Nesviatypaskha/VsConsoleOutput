@@ -37,7 +37,7 @@ __declspec(dllexport) void RedirectToPipe()
 	std::cout << "RedirectToPipe()" << std::endl;
 	try
 	{
-		HANDLE hPipe = CreateFile(TEXT("\\\\.\\pipe\\VSConsoleOutputBetaPipe"),
+		HANDLE hPipe = CreateFile(TEXT("\\\\.\\pipe\\VSConsoleOutputPipe"),
 			GENERIC_WRITE,
 			0,
 			NULL,

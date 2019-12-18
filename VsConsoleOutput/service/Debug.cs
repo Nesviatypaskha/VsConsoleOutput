@@ -6,24 +6,24 @@ using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
 
-namespace VSConsoleOutputBeta
-{    
-    internal sealed class DebugManager : IDebugEventCallback2
+namespace service
+{
+    internal sealed class Debug : IDebugEventCallback2
     {
-        public const string BPMessage = "VSOutputConsole connected";
+        public const string BREAKPOINT_MESSAGE = "VSOutputConsole connected";
 
-        private DTE m_dte;
+        private DTE m_DTE;
         private readonly IVsDebugger m_debugger;
         private bool m_attached;
         private bool m_added;
         private System.Threading.Thread m_serverThread;
-        private string m_entryFunctionName;
-        private static DebugManager m_instance;
-        private static readonly object m_padlock = new object();
+        private string m_EntryFunction;
+        private static Debug s_Instance;
+        private static readonly object s_Padlock = new object();
         
-        public DebugManager()
+        public Debug()
         {
-            m_dte = Package.GetGlobalService(typeof(SDTE)) as DTE;
+            m_DTE = Package.GetGlobalService(typeof(SDTE)) as DTE;
             m_debugger = Package.GetGlobalService(typeof(SVsShellDebugger)) as IVsDebugger;
             m_attached = false;
             m_added = false;
@@ -31,23 +31,23 @@ namespace VSConsoleOutputBeta
 
         public static void Instantiate()
         {
-            lock (m_padlock)
+            lock (s_Padlock)
             {
-                if (m_instance != null)
-                    throw new InvalidOperationException(string.Format("{0} of Resurrect is already instantiated.", m_instance.GetType().Name));
-                m_instance = new DebugManager();
+                if (s_Instance != null)
+                    throw new InvalidOperationException(string.Format("{0} of Resurrect is already instantiated.", s_Instance.GetType().Name));
+                s_Instance = new Debug();
             }
         }
 
-        public static DebugManager Instance
+        public static Debug Instance
         {
             get
             {
-                if (m_instance == null)
+                if (s_Instance == null)
                 {
                     Instantiate();
                 }
-                return m_instance;
+                return s_Instance;
             }
         }
 
@@ -61,11 +61,10 @@ namespace VSConsoleOutputBeta
             m_debugger.UnadviseDebugEventCallback(this);
         }
 
-        static string GetAssemblyLocalPathFrom(Type type)
+        static string GetPackagePath(Type type)
         {
-            string codebase = type.Assembly.CodeBase;
-            var uri = new Uri(codebase, UriKind.Absolute);
-            return uri.LocalPath;
+            var a_Result = new Uri(type.Assembly.CodeBase, UriKind.Absolute);
+            return a_Result.LocalPath;
         }
 
         private void RedirectStdStreams(IDebugThread2 thread)
@@ -83,8 +82,8 @@ namespace VSConsoleOutputBeta
                     {
                         continue;
                     }
-                    string command = "";
-                    string installationPath = GetAssemblyLocalPathFrom(typeof(VSConsoleOutputBetaPackage));
+                    var command = "";
+                    var installationPath = GetPackagePath(typeof(package.VSConsoleOutputPackage));
                     if (frameInfo[0].m_bstrLanguage == "C#")
                     {
                         installationPath = installationPath.Replace("VsConsoleOutput.dll", "c_sharp.dll");
@@ -102,7 +101,8 @@ namespace VSConsoleOutputBeta
 
                             if (expressionContext.ParseText(command, enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
                             {
-                                m_serverThread = new System.Threading.Thread(InputPipe.StartServer);
+                                //(Pipe.Type.INPUT);
+                                m_serverThread = new System.Threading.Thread(output.Pipe.StartServer);
                                 m_serverThread.Start();
                                 m_attached = true;
                                 IDebugProperty2 dp2;
@@ -135,13 +135,13 @@ namespace VSConsoleOutputBeta
                             continue;
                         }
                         string funcName = frameInfo[0].m_bstrFuncName;
-                        m_entryFunctionName = funcName.Substring(funcName.LastIndexOf('.') + 1);
+                        m_EntryFunction = funcName.Substring(funcName.LastIndexOf('.') + 1);
 
-                        if (m_dte != null)
+                        if (m_DTE != null)
                         {
-                            m_dte.Debugger.Breakpoints.Add(m_entryFunctionName);
-                            Breakpoint2 breakpoint2 = m_dte.Debugger.Breakpoints.Item(m_dte.Debugger.Breakpoints.Count) as Breakpoint2;
-                            breakpoint2.Message = BPMessage;
+                            m_DTE.Debugger.Breakpoints.Add(m_EntryFunction);
+                            Breakpoint2 breakpoint2 = m_DTE.Debugger.Breakpoints.Item(m_DTE.Debugger.Breakpoints.Count) as Breakpoint2;
+                            breakpoint2.Message = BREAKPOINT_MESSAGE;
                             breakpoint2.BreakWhenHit = false;
                             m_added = true;
                         }   
@@ -156,9 +156,9 @@ namespace VSConsoleOutputBeta
 
         private void RemoveBraekpoint()
         {
-            foreach (Breakpoint2 bp in m_dte.Debugger.Breakpoints)
+            foreach (Breakpoint2 bp in m_DTE.Debugger.Breakpoints)
             {
-                if (bp.Message == BPMessage)
+                if (bp.Message == BREAKPOINT_MESSAGE)
                 {
                     bp.Delete();
                     m_added = false;
@@ -173,12 +173,12 @@ namespace VSConsoleOutputBeta
             if ((debugEvent is IDebugEntryPointEvent2) || (riidEvent.ToString("D") == "e8414a3e-1642-48ec-829e-5f4040e16da9"))
             {
                 // This is place for place initialisation method 
-                OutputText.Write("VSOutputDebugLog", "debugEvent is IDebugEntryPointEvent2");
+                Output.Write("VSOutputDebugLog", "debugEvent is IDebugEntryPointEvent2");
                 AddTracePoint(thread);
             }
             else if ((debugEvent is IDebugSessionDestroyEvent2) || (riidEvent.ToString("D") == "f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"))
             {
-                OutputText.Write("VSOutputDebugLog", "debugEvent is IDebugSessionDestroyEvent2"); //"IDebugSessionDestroyEvent2","f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"            
+                Output.Write("VSOutputDebugLog", "debugEvent is IDebugSessionDestroyEvent2"); //"IDebugSessionDestroyEvent2","f199b2c2-88fe-4c5d-a0fd-aa046b0dc0dc"            
                 if ((m_serverThread != null) && m_serverThread.IsAlive)
                 {
                     m_serverThread.Join();
@@ -189,7 +189,7 @@ namespace VSConsoleOutputBeta
             }
             else if ((debugEvent is IDebugMessageEvent2) || (riidEvent.ToString("D") == "3bdb28cf-dbd2-4d24-af03-01072b67eb9e"))
             {
-                OutputText.Write("VSOutputDebugLog", "debugEvent is IDebugSessionDestroyEvent2"); //"IDebugMessageEvent2","3bdb28cf-dbd2-4d24-af03-01072b67eb9e"
+                Output.Write("VSOutputDebugLog", "debugEvent is IDebugSessionDestroyEvent2"); //"IDebugMessageEvent2","3bdb28cf-dbd2-4d24-af03-01072b67eb9e"
                 RedirectStdStreams(thread);
             }
             return VSConstants.S_OK;

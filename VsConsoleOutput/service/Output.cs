@@ -3,25 +3,28 @@ using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace VSConsoleOutputBeta
+namespace service
 {
-    public static class OutputText
+    public static class Output
     {
-        public static void WriteInNewPane(DTE2 dte2, string name, string message, Guid guid)
+        public static void Write(DTE2 dte2, string name, string message, Guid guid)
         {
             if (dte2 != null)
             {
-                IVsOutputWindow output = VSConsoleOutputBetaPackage.GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
-                output.CreatePane(ref guid, name, 1, 1);
-                IVsOutputWindowPane outputPane;
-                output.GetPane(ref guid, out outputPane);
-                outputPane.OutputString(message + "\n");
-                outputPane.Activate();
+                var a_Context1 = package.VSConsoleOutputPackage.GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
+                var a_Context2 = (IVsOutputWindowPane)null;
+                {
+                    a_Context1.CreatePane(ref guid, name, 1, 1);
+                }
+                {
+                    a_Context1.GetPane(ref guid, out a_Context2);
+                }
+                if (a_Context2 != null)
+                {
+                    a_Context2.OutputString(message + "\n");
+                    a_Context2.Activate();
+                }
             }
         }
 
@@ -35,10 +38,10 @@ namespace VSConsoleOutputBeta
 #endif
             try
             {
-                DTE2 dte2 = Package.GetGlobalService(typeof(SDTE)) as DTE2;
+                var dte2 = Package.GetGlobalService(typeof(SDTE)) as DTE2;
                 if (dte2 != null)
                 {
-                    OutputWindowPanes panes = dte2.ToolWindows.OutputWindow.OutputWindowPanes;
+                    var panes = dte2.ToolWindows.OutputWindow.OutputWindowPanes;
                     foreach (OutputWindowPane pane in panes)
                     {
                         if (pane.Name == name)
@@ -50,11 +53,11 @@ namespace VSConsoleOutputBeta
                     }
                     if (name == "Console")
                     {
-                        WriteInNewPane(dte2, name, message, new Guid("204E2A26-7BD7-4632-8043-18D94C179103"));
+                        Write(dte2, name, message, new Guid("204E2A26-7BD7-4632-8043-18D94C179103"));
                     }
                     else
                     {
-                        WriteInNewPane(dte2, name, message, new Guid());
+                        Write(dte2, name, message, new Guid());
                     }
                 }
             }
