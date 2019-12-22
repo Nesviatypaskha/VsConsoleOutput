@@ -13,18 +13,36 @@ namespace service
         public const string BREAKPOINT_MESSAGE = "VSOutputConsole connected";
 
         private DTE m_DTE;
-        private readonly IVsDebugger m_debugger;
+        private static IVsDebugger s_debugger;
         private bool m_attached;
         private bool m_added;
         private System.Threading.Thread m_serverThread;
         private string m_EntryFunction;
         private static Debug s_Instance;
         private static readonly object s_Padlock = new object();
-        
+
+
+        public static void Initialize()
+        {
+            if (s_Instance == null)
+            {
+                Instantiate();
+            }
+            s_debugger.AdviseDebugEventCallback(s_Instance);
+        }
+
+        public static void Finalize()
+        {
+            if (s_Instance != null)
+            {
+                s_debugger.UnadviseDebugEventCallback(s_Instance);
+            }
+        }
+
         public Debug()
         {
             m_DTE = Package.GetGlobalService(typeof(SDTE)) as DTE;
-            m_debugger = Package.GetGlobalService(typeof(SVsShellDebugger)) as IVsDebugger;
+            s_debugger = Package.GetGlobalService(typeof(SVsShellDebugger)) as IVsDebugger;
             m_attached = false;
             m_added = false;
         }
@@ -37,28 +55,6 @@ namespace service
                     throw new InvalidOperationException(string.Format("{0} of Resurrect is already instantiated.", s_Instance.GetType().Name));
                 s_Instance = new Debug();
             }
-        }
-
-        public static Debug Instance
-        {
-            get
-            {
-                if (s_Instance == null)
-                {
-                    Instantiate();
-                }
-                return s_Instance;
-            }
-        }
-
-        public void Advise()
-        {
-            m_debugger.AdviseDebugEventCallback(this);
-        }
-
-        public void Unadvise()
-        {
-            m_debugger.UnadviseDebugEventCallback(this);
         }
 
         static string GetPackagePath(Type type)
@@ -122,13 +118,17 @@ namespace service
                 if ((thread != null) && (!m_added))
                 {
                     IEnumDebugFrameInfo2 frame;
-                    thread.EnumFrameInfo(enum_FRAMEINFO_FLAGS.FIF_FUNCNAME, 0, out frame);
+                    thread.EnumFrameInfo(enum_FRAMEINFO_FLAGS.FIF_FUNCNAME | enum_FRAMEINFO_FLAGS.FIF_LANGUAGE, 0, out frame);
                     uint frames;
                     frame.GetCount(out frames);
                     var frameInfo = new FRAMEINFO[1];
                     uint pceltFetched = 0;
                     while ((frame.Next(1, frameInfo, ref pceltFetched) == VSConstants.S_OK) && (pceltFetched > 0))
                     {
+                        if (frameInfo[0].m_bstrLanguage != "C#")
+                        {
+                            return;
+                        }
                         var fr = frameInfo[0].m_pFrame as IDebugStackFrame2;
                         if (String.IsNullOrEmpty(frameInfo[0].m_bstrFuncName))
                         {
@@ -136,7 +136,6 @@ namespace service
                         }
                         string funcName = frameInfo[0].m_bstrFuncName;
                         m_EntryFunction = funcName.Substring(funcName.LastIndexOf('.') + 1);
-
                         if (m_DTE != null)
                         {
                             m_DTE.Debugger.Breakpoints.Add(m_EntryFunction);

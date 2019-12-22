@@ -23,8 +23,7 @@ namespace package
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-            service.Debug.Instance.Advise();
-            service.Debug.Instance.Initialize();
+            service.Debug.Initialize();
         }
 
         protected override int QueryClose(out bool canClose)
@@ -33,12 +32,9 @@ namespace package
             {
                 canClose = true;
             }
-            {
-                service.Debug.Instance.Finalize();
-            }
             try
             {
-                service.Debug.Instance.Unadvise();
+                service.Debug.Finalize();
                 hr = base.QueryClose(out canClose);
                 Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(hr);
             }

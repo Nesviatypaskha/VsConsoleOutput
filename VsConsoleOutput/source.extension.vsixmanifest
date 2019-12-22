@@ -1,20 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
-  <Metadata>
-    <Identity Id="VSConsoleOutput.753a2975-4e4c-4067-9e9d-d2d5b867ec23" Version="1.0" Language="en-US" Publisher="Alex" />
-    <DisplayName>VSConsoleOutput</DisplayName>
-    <Description>Empty VSIX Project.</Description>
-  </Metadata>
-  <Installation>
-    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[16.0, 17.0)" />
-  </Installation>
-  <Dependencies>
-    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
-  </Dependencies>
-  <Prerequisites>
-    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[16.0,17.0)" DisplayName="Visual Studio core editor" />
-  </Prerequisites>
-  <Assets>
-    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
-  </Assets>
+    <Metadata>
+        <Identity Id="VSConsoleOutput.753a2975-4e4c-4067-9e9d-d2d5b867ec23" Version="0.9.1" Language="en-US" Publisher="Nesviatypaskha Oleksii" />
+        <DisplayName>VSConsoleOutput</DisplayName>
+        <Description xml:space="preserve">This extension redirect output from Standart Console output into Visual Studio. In current time it's available only for C# and it is working on similar functionality to C ++.  Also planning to redirect Standart Input.</Description>
+        <MoreInfo>https://github.com/Nesviatypaskha/VsConsoleOutput</MoreInfo>
+        <License>resource\license\lic.txt</License>
+        <Icon>resource\icon\Icon128.png</Icon>
+        <PreviewImage>resource\picture\Preview.png</PreviewImage>
+        <Tags>Console Output</Tags>
+        <Preview>true</Preview>
+    </Metadata>
+    <Installation>
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[16.0, 17.0)" />
+    </Installation>
+    <Dependencies>
+        <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
+    </Dependencies>
+    <Prerequisites>
+        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[16.0,17.0)" DisplayName="Visual Studio core editor" />
+    </Prerequisites>
+    <Assets>
+        <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+    </Assets>
 </PackageManifest>
