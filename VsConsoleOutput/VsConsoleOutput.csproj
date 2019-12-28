@@ -50,6 +50,7 @@
     <Compile Include="service\Pipe.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="package\VsConsoleOutputPackage.cs" />
+    <Compile Include="service\Solution.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">

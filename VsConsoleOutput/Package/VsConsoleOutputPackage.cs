@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -24,6 +25,8 @@ namespace package
         {
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             service.Debug.Initialize();
+            service.Solution.Initialize();
+
         }
 
         protected override int QueryClose(out bool canClose)
