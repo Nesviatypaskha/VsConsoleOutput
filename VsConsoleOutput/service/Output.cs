@@ -1,4 +1,4 @@
-﻿using EnvDTE;
+﻿
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -9,11 +9,13 @@ namespace service
 {
     public static class Output
     {
+        public const string DEBUG = "VSOutputDebugLog";
+        public const string CONSOLE = "Console";
         private static Dictionary<string, IVsOutputWindowPane> m_Outputs;
         public static IVsOutputWindowPane GetPane(string name)
         {
 #if !DEBUG
-            if (name == "VSOutputDebugLog")
+            if (name == DEBUG)
             {
                 return null;
             }
@@ -36,14 +38,14 @@ namespace service
             var dte2 = Package.GetGlobalService(typeof(SDTE)) as DTE2;
             var a_Context1 = package.VSConsoleOutputPackage.GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
             var guid = new Guid();
-            if (name == "Console")
+            if (name == CONSOLE)
             {
                 guid = new Guid("204E2A26-7BD7-4632-8043-18D94C179103");
             }
             a_Context1.CreatePane(ref guid, name, 1, 1);
             a_Context1.GetPane(ref guid, out result);
             m_Outputs.Add(name, result);
-            
+
             result.Activate();
             return result;
         }

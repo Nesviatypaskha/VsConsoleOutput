@@ -10,29 +10,19 @@ namespace service
         {
             public static void StartServer(/*Type type*/)
             {
-                // TODO:
-                //switch (type)
-                //{
-                //    case Type.INPUT:
-                //        break;
-                //    case Type.OUTPUT:
-                //        break;
-                //    case Type.ERROR:
-                //        break;
-                //}
                 try
                 {
-                    var a_Context = new NamedPipeServerStream("VSConsoleOutputPipe", PipeDirection.In);
+                    var s_serverStream = new NamedPipeServerStream("VSConsoleOutputPipe", PipeDirection.In);
                     {
-                        a_Context.WaitForConnection();
+                        s_serverStream.WaitForConnection();
                     }
-                    using (var a_Context1 = new StreamReader(a_Context))
+                    using (var a_Context1 = new StreamReader(s_serverStream))
                     {
                         // Display the read text to the console
                         var a_Context2 = "";
                         while ((a_Context2 = a_Context1.ReadLine()) != null)
                         {
-                            Output.Write("Console", a_Context2);
+                            Output.Write(Output.CONSOLE, a_Context2);
                         }
                     }
                 }

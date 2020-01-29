@@ -26,7 +26,6 @@ namespace package
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             service.Debug.Initialize();
             service.Solution.Initialize();
-
         }
 
         protected override int QueryClose(out bool canClose)
