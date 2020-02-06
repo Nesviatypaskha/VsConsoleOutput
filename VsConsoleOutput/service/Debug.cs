@@ -94,7 +94,11 @@ namespace service
             {
                 clear();
             }
-            
+            if (debugEvent is IDebugSessionCreateEvent2)
+            {
+                Output.ClearPane(Output.CONSOLE);
+            }
+
             if (m_redirected)
             {
                 return VSConstants.S_OK;

@@ -64,6 +64,19 @@ namespace service
                 System.Diagnostics.Debug.WriteLine(ex.ToString());
             }
         }
+        public static void ClearPane(string name)
+        {
+            try
+            {
+                var a_Context1 = GetPane(name);
+                if (a_Context1 != null)
+                    a_Context1.Clear();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
+            }
+        }
         public static void Write(string name, string message)
         {
             try
