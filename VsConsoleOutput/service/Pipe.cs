@@ -12,6 +12,7 @@ namespace service
             {
                 try
                 {
+                    bool m_connected = false;
                     var s_serverStream = new NamedPipeServerStream("VSConsoleOutputPipe", PipeDirection.In);
                     {
                         s_serverStream.WaitForConnection();
@@ -22,7 +23,15 @@ namespace service
                         var a_Context2 = "";
                         while ((a_Context2 = a_Context1.ReadLine()) != null)
                         {
-                            Output.Write(Output.CONSOLE, a_Context2);
+                            if (!m_connected)
+                            {
+                                m_connected = true;
+                                Debug.Instance.m_attached = true;
+                            }
+                            else
+                            {
+                                Output.Write(Output.CONSOLE, a_Context2);
+                            }
                         }
                     }
                 }

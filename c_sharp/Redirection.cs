@@ -9,29 +9,29 @@ namespace c_sharp
         private static NamedPipeClientStream pipeClient;
 
         public static void RedirectToPipe()
-        {
-            System.Diagnostics.Trace.WriteLine("Trace.VSConsoleOutputPipe");
-            pipeClient = new NamedPipeClientStream(".", "VSConsoleOutputPipe", PipeDirection.Out);
-            if (pipeClient != null)
+        {  
+            try
             {
-                Console.WriteLine("Please see console in Visual Studio output");
-                pipeClient.Connect(10);
-                if (pipeClient.IsConnected)
+                pipeClient = new NamedPipeClientStream(".", "VSConsoleOutputPipe", PipeDirection.Out);
+                if (pipeClient != null)
                 {
-                    try
+                    pipeClient.Connect(500);
+                    if (pipeClient.IsConnected)  
                     {
+                        Console.WriteLine("Please find console in Visual Studio output");
                         StreamWriter sw = new StreamWriter(pipeClient);
                         if (sw != null)
                         {
                             sw.AutoFlush = true;
                             Console.SetOut(sw);
+                            Console.WriteLine("VSConsoleOutput - WORK FINE");
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine(ex.ToString());
-                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
             }
         }
     }
