@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
+//using VsConsoleOutput.settings;
 using Task = System.Threading.Tasks.Task;
 
 namespace package
@@ -17,6 +18,7 @@ namespace package
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasSingleProject_string, PackageAutoLoadFlags.BackgroundLoad)]
 
     [InstalledProductRegistration("VSConsoleOutput", "VSConsoleOutput", "0.9.1", IconResourceID = 400)]
+
     public sealed class VSConsoleOutputPackage : AsyncPackage
     {
         public const string PackageGuidString = "f6dfad00-7979-4fd7-b28b-71336c51f20f";
@@ -46,5 +48,7 @@ namespace package
             }
             return hr;
         }
+
+
     }
 }

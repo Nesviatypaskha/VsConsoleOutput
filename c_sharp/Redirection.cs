@@ -18,7 +18,7 @@ namespace c_sharp
                     pipeClient.Connect(500);
                     if (pipeClient.IsConnected)  
                     {
-                        Console.WriteLine("Please find console in Visual Studio output");
+                        Console.WriteLine("Console redirected to Output Window in Visual Studio");
                         StreamWriter sw = new StreamWriter(pipeClient);
                         if (sw != null)
                         {
@@ -33,6 +33,9 @@ namespace c_sharp
             {
                 System.Diagnostics.Debug.WriteLine(ex.ToString());
             }
+
+            ////https://stackoverflow.com/questions/45534741/how-to-set-the-output-handle-to-opened-console-in-a-windows-application
+            ///
         }
     }
 }

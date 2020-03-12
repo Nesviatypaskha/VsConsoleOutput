@@ -1,40 +1,12 @@
-// dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
 #include <exception>
-//#include <windows.h> 
-//#include <stdio.h>
-//#include <tchar.h>
-//#include <strsafe.h>
 #include <iostream>
 #include <fstream>
-//#include <string>
 #include <io.h>
-//#include <stdlib.h>
 #include <stdio.h>
-#include <io.h>
-//#include <fcntl.h>
-//#include <process.h>
-
-
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-                     )
-{
-    switch (ul_reason_for_call)
-    {
-    case DLL_PROCESS_ATTACH:
-    case DLL_THREAD_ATTACH:
-    case DLL_THREAD_DETACH:
-    case DLL_PROCESS_DETACH:
-        break;
-    }
-    return TRUE;
-}
 
 __declspec(dllexport) void RedirectToPipe()
 {
-	std::cout << "RedirectToPipe()" << std::endl;
 	try
 	{
 		HANDLE hPipe = CreateFile(TEXT("\\\\.\\pipe\\VSConsoleOutputPipe"),
@@ -54,11 +26,11 @@ __declspec(dllexport) void RedirectToPipe()
 				file = _fdopen(file_descriptor, "w");
 				if (file != NULL)
 				{
+					std::cout << "Console redirected to Output Window in Visual Studio" << std::endl;
 					if (_dup2(_fileno(file), 1) != -1)
 					{
-
+						std::cout << "Console redirected to Output Window in Visual Studio" << std::endl;
 					}
-					//std::cout.rdbuf(std::ofstream(file).rdbuf()); //redirect std::cout
 				}
 			}
 		}
@@ -69,3 +41,20 @@ __declspec(dllexport) void RedirectToPipe()
 	}
 }
 
+BOOL APIENTRY DllMain(HMODULE hModule,
+	DWORD  ul_reason_for_call,
+	LPVOID lpReserved
+)
+{
+	switch (ul_reason_for_call)
+	{
+	case DLL_PROCESS_ATTACH:
+		RedirectToPipe();
+		break;
+	case DLL_THREAD_ATTACH:
+	case DLL_THREAD_DETACH:
+	case DLL_PROCESS_DETACH:
+		break;
+	}
+	return TRUE;
+}

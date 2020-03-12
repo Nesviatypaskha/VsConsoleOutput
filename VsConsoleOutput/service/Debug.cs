@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
+using VsConsoleOutput.service;
 
 namespace service
 {
@@ -16,6 +17,8 @@ namespace service
         private bool m_added;
         private bool m_redirected;
         private string m_language;
+        private string m_path;
+        private uint m_pid;
         private static uint _cookie;
         private System.Threading.Thread m_serverThread;
         private DTE m_DTE;
@@ -63,6 +66,8 @@ namespace service
             m_attached = false;
             m_added = false;
             m_redirected = false;
+            m_pid = 0;
+            m_path = getPath();
         }
 
         public static void Instantiate()
@@ -98,12 +103,10 @@ namespace service
             {
                 Output.ClearPane(Output.CONSOLE);
             }
-
             if (m_redirected)
             {
                 return VSConstants.S_OK;
             }
-
             if (m_attached)
             {
                 RemoveBraekpoint();
@@ -112,13 +115,18 @@ namespace service
             if (thread != null)
             {
                 AddTracePoint(thread);
-                RedirectStdStreams(thread);
+                if (m_language == "C#")
+                {
+                    RedirectStdStreams(thread);
+                }
+                else if (m_language == "C++")
+                {
+                    RedirectStdStreams(process);
+                }
             }
-
-            
             return VSConstants.S_OK;
-
         }
+
         private void AddTracePoint(IDebugThread2 thread)
         {
             try
@@ -133,36 +141,40 @@ namespace service
                     uint pceltFetched = 0;
                     while ((frame.Next(1, frameInfo, ref pceltFetched) == VSConstants.S_OK) && (pceltFetched > 0))
                     {
-                        m_language = frameInfo[0].m_bstrLanguage;
-                        if (m_language != "C#")
+                        string language = frameInfo[0].m_bstrLanguage;
+                        if (language == "C#")
                         {
-                            return;
+                            m_language = "C#";
+                            var fr = frameInfo[0].m_pFrame as IDebugStackFrame2;
+                            if (String.IsNullOrEmpty(frameInfo[0].m_bstrFuncName))
+                            {
+                                continue;
+                            }
+                            if (fr == null)
+                            {
+                                continue;
+                            }
+                            IDebugCodeContext2 ppCodeCxt;
+                            fr.GetCodeContext(out ppCodeCxt);
+                            IDebugDocumentContext2 ppSrcCxt;
+                            ppCodeCxt.GetDocumentContext(out ppSrcCxt);
+                            var begPosition = new TEXT_POSITION[1];
+                            var endPosition = new TEXT_POSITION[1];
+                            ppSrcCxt.GetSourceRange(begPosition, endPosition);
+                            string pbstrFileName;
+                            ppSrcCxt.GetName(enum_GETNAME_TYPE.GN_NAME, out pbstrFileName);
+                            if (m_DTE != null)
+                            {
+                                m_DTE.Debugger.Breakpoints.Add("", System.IO.Path.GetFileName(pbstrFileName), (int)begPosition[0].dwLine + 1);
+                                Breakpoint2 breakpoint2 = m_DTE.Debugger.Breakpoints.Item(m_DTE.Debugger.Breakpoints.Count) as Breakpoint2;
+                                breakpoint2.Message = BREAKPOINT_MESSAGE;
+                                breakpoint2.BreakWhenHit = false;
+                                m_added = true;
+                            }
                         }
-                        var fr = frameInfo[0].m_pFrame as IDebugStackFrame2;
-                        if (String.IsNullOrEmpty(frameInfo[0].m_bstrFuncName))
+                        else if (language == "C++")
                         {
-                            continue;
-                        }
-                        if (fr == null)
-                        {
-                            continue;
-                        }
-                        IDebugCodeContext2 ppCodeCxt;
-                        fr.GetCodeContext(out ppCodeCxt);
-                        IDebugDocumentContext2 ppSrcCxt;
-                        ppCodeCxt.GetDocumentContext(out ppSrcCxt);
-                        var begPosition = new TEXT_POSITION[1];
-                        var endPosition = new TEXT_POSITION[1];
-                        ppSrcCxt.GetSourceRange(begPosition, endPosition);
-                        string pbstrFileName;
-                        ppSrcCxt.GetName(enum_GETNAME_TYPE.GN_NAME, out pbstrFileName);
-                        if (m_DTE != null)
-                        {
-                            m_DTE.Debugger.Breakpoints.Add("", System.IO.Path.GetFileName(pbstrFileName), (int)begPosition[0].dwLine + 1);
-                            Breakpoint2 breakpoint2 = m_DTE.Debugger.Breakpoints.Item(m_DTE.Debugger.Breakpoints.Count) as Breakpoint2;
-                            breakpoint2.Message = BREAKPOINT_MESSAGE;
-                            breakpoint2.BreakWhenHit = false;
-                            m_added = true;
+                            m_language = "C++";
                         }
                     }
                 }
@@ -170,6 +182,20 @@ namespace service
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(ex.ToString());
+            }
+        }
+        private void RedirectStdStreams(IDebugProcess2 process)
+        {
+            var ad_process_id = new AD_PROCESS_ID[1];
+            if (process.GetPhysicalProcessId(ad_process_id) == VSConstants.S_OK)
+            {
+                m_pid = ad_process_id[0].dwProcessId;
+                if (m_pid != null)
+                {
+                    var path = getPath();
+                    path = path.Replace("VsConsoleOutput.dll", "cpp.dll");
+                    m_added = DllInjector.GetInstance.Inject(m_pid, path);
+                }
             }
         }
         private void RedirectStdStreams(IDebugThread2 thread)
@@ -208,16 +234,24 @@ namespace service
         private string getCommand()
         {
             string result = null;
-            var installationPath = (new Uri(typeof(package.VSConsoleOutputPackage).Assembly.CodeBase)).LocalPath;
             if (m_language == "C#")
             {
-                installationPath = installationPath.Replace("VsConsoleOutput.dll", "c_sharp.dll");
-                installationPath = installationPath.Replace("\\", "\\\\");
-                result = "System.Reflection.Assembly.LoadFrom(\"" + installationPath +
-                          "\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"" + installationPath +
+                var path = getPath();
+                path = path.Replace("VsConsoleOutput.dll", "c_sharp.dll");
+                path = path.Replace("\\", "\\\\");
+                result = "System.Reflection.Assembly.LoadFrom(\"" + path +
+                          "\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"" + path +
                           "\").GetType(\"c_sharp.Redirection\", true, true)), new object[] { });";
             }
             return result;
+        }
+        private string getPath()
+        {
+            if (m_path == null)
+            {
+                m_path = (new Uri(typeof(package.VSConsoleOutputPackage).Assembly.CodeBase)).LocalPath;
+            }
+            return m_path;
         }
         private void RemoveBraekpoint()
         {
@@ -237,6 +271,7 @@ namespace service
                 m_attached = false;
                 m_added = false;
                 m_redirected = false;
+                m_pid = 0;
                 RemoveBraekpoint();
             }
             catch (Exception ex)
