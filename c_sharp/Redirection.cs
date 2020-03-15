@@ -15,16 +15,15 @@ namespace c_sharp
                 pipeClient = new NamedPipeClientStream(".", "VSConsoleOutputPipe", PipeDirection.Out);
                 if (pipeClient != null)
                 {
-                    pipeClient.Connect(500);
+                    pipeClient.Connect(5000);
                     if (pipeClient.IsConnected)  
                     {
-                        Console.WriteLine("Console redirected to Output Window in Visual Studio");
+                        Console.WriteLine("//Console redirected to Output Window in Visual Studio");
                         StreamWriter sw = new StreamWriter(pipeClient);
                         if (sw != null)
                         {
                             sw.AutoFlush = true;
                             Console.SetOut(sw);
-                            Console.WriteLine("VSConsoleOutput - WORK FINE");
                         }
                     }
                 }

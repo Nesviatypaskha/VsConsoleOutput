@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.IO.Pipes;
+using System.Text;
 
 namespace service
 {
@@ -17,22 +18,17 @@ namespace service
                     {
                         s_serverStream.WaitForConnection();
                     }
-                    using (var a_Context1 = new StreamReader(s_serverStream))
+                    const int BUFFERSIZE = 256;
+                    while (s_serverStream.IsConnected)
                     {
-                        // Display the read text to the console
-                        var a_Context2 = "";
-                        while ((a_Context2 = a_Context1.ReadLine()) != null)
+                        byte[] buffer = new byte[BUFFERSIZE];
+                        int nRead = s_serverStream.Read(buffer, 0, BUFFERSIZE);
+                        if (nRead != 0)
                         {
-                            if (!m_connected)
-                            {
-                                m_connected = true;
-                                Debug.Instance.m_attached = true;
-                            }
-                            else
-                            {
-                                Output.Write(Output.CONSOLE, a_Context2);
-                            }
-                        }
+                            m_connected = true;
+                            string line = Encoding.UTF8.GetString(buffer, 0, nRead).Replace("\r", "");
+                            Output.Write(Output.CONSOLE, line);
+                        }                      
                     }
                 }
                 catch (Exception ex)

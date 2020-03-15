@@ -26,10 +26,9 @@ __declspec(dllexport) void RedirectToPipe()
 				file = _fdopen(file_descriptor, "w");
 				if (file != NULL)
 				{
-					std::cout << "Console redirected to Output Window in Visual Studio" << std::endl;
+					std::cout << "//Console redirected to Output Window in Visual Studio" << std::endl;
 					if (_dup2(_fileno(file), 1) != -1)
 					{
-						std::cout << "Console redirected to Output Window in Visual Studio" << std::endl;
 					}
 				}
 			}

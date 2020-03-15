@@ -85,13 +85,17 @@ namespace service
                 if (a_Context1 != null)
                 {
                     a_Context1.Activate();
-                    a_Context1.OutputString(message + "\n");
+                    a_Context1.OutputString(message);
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(ex.ToString());
             }
+        }
+        public static void WriteLine(string name, string message)
+        {
+            Write(name, (message + "\n"));
         }
     }
 }

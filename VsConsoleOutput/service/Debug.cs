@@ -119,8 +119,9 @@ namespace service
                 {
                     RedirectStdStreams(thread);
                 }
-                else if (m_language == "C++")
+                else if ((m_language == "C++") && (process != null))
                 {
+                    m_attached = true;
                     RedirectStdStreams(process);
                 }
             }
