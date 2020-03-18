@@ -36,7 +36,6 @@ namespace proxy
                             if (_dup2(_fileno(a_Context1), 1) == 0)
                             {
                                 std::cout << "Console redirected to Output Window in Visual Studio..." << std::endl;
-                                std::cout << "!!!JUST FOR TEST!!!" << std::endl;
                             }
                             else
                             {
