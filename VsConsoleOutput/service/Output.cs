@@ -1,102 +1,74 @@
-﻿
-using EnvDTE80;
-using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
+﻿using Microsoft.VisualStudio.Shell.Interop;
 using System;
-using System.Collections.Generic;
-using System.IO;
 
 namespace service
 {
     public static class Output
     {
-        public const string DEBUG = "VSOutputDebugLog";
-        public const string CONSOLE = "Console";
-        private static Dictionary<string, IVsOutputWindowPane> m_Outputs;
-        public static IVsOutputWindowPane GetPane(string name)
-        {
-#if !DEBUG
-            if (name == DEBUG)
-            {
-                return null;
-            }
-#endif
-            var result = (IVsOutputWindowPane)null;
-            if (m_Outputs == null)
-            {
-                m_Outputs = new Dictionary<string, IVsOutputWindowPane>();
-            }
-            bool isPresent = m_Outputs.TryGetValue(name, out result);
-            if (!isPresent)
-            {
-                result = CreatePane(name);
-            }
-            return result;
-        }
-        private static IVsOutputWindowPane CreatePane(string name)
-        {
-            var result = (IVsOutputWindowPane)null;
-            var dte2 = Package.GetGlobalService(typeof(SDTE)) as DTE2;
-            var a_Context1 = package.VSConsoleOutputPackage.GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
-            var guid = new Guid();
-            if (name == CONSOLE)
-            {
-                guid = new Guid("204E2A26-7BD7-4632-8043-18D94C179103");
-            }
-            a_Context1.CreatePane(ref guid, name, 1, 1);
-            a_Context1.GetPane(ref guid, out result);
-            m_Outputs.Add(name, result);
+        private static IVsOutputWindowPane s_Pane = null;
 
-            result.Activate();
-            return result;
-        }
-
-        public static void ActivatePane(string name)
+        public static void Clear()
         {
             try
             {
-                var a_Context1 = GetPane(name);
-                if (a_Context1 != null)
-                    a_Context1.Activate();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex.ToString());
-            }
-        }
-        public static void ClearPane(string name)
-        {
-            try
-            {
-                var a_Context1 = GetPane(name);
-                if (a_Context1 != null)
-                    a_Context1.Clear();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex.ToString());
-            }
-        }
-        public static void Write(string name, string message)
-        {
-            try
-            {
-                var a_Context1 = GetPane(name);
-                if (a_Context1 != null)
+                var a_Context = __GetPane();
+                if (a_Context != null)
                 {
-                    a_Context1.Activate();
-                    a_Context1.OutputString(message);
+                    a_Context.Clear();
+                    a_Context.Activate();
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(ex.ToString());
+                service.Output.WriteError(ex.ToString());
             }
         }
-        public static void WriteLine(string name, string message)
+
+        public static void WriteLine(string message)
         {
-            Write(name, (message + "\n"));
+            try
+            {
+                var a_Context = __GetPane();
+                if (a_Context != null)
+                {
+                    a_Context.OutputString(message);
+                    a_Context.Activate();
+                }
+            }
+            catch (Exception ex)
+            {
+                service.Output.WriteError(ex.ToString());
+            }
+        }
+
+        public static void WriteError(string message)
+        {
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine("ERROR: " + message + " // <CONSOLE>\n");
+#endif
+        }
+
+        private static IVsOutputWindowPane __GetPane()
+        {
+            try
+            {
+                if (s_Pane == null)
+                {
+                    var a_Context = package.VSConsoleOutputPackage.GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
+                    {
+                        var a_Context1 = new Guid("204E2A26-7BD7-4632-8043-18D94C179103");
+                        {
+                            a_Context.CreatePane(ref a_Context1, "Console", 1, 1);
+                            a_Context.GetPane(ref a_Context1, out s_Pane);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                service.Output.WriteError(ex.ToString());
+            }
+            return s_Pane;
         }
     }
 }
-

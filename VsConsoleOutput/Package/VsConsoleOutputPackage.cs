@@ -4,7 +4,6 @@ using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
-//using VsConsoleOutput.settings;
 using Task = System.Threading.Tasks.Task;
 
 namespace package
@@ -16,39 +15,49 @@ namespace package
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasMultipleProjects_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasSingleProject_string, PackageAutoLoadFlags.BackgroundLoad)]
-
-    [InstalledProductRegistration("VSConsoleOutput", "VSConsoleOutput", "0.9.1", IconResourceID = 400)]
-
+    [InstalledProductRegistration("VsConsoleOutput", "VsConsoleOutput", "1.0.1", IconResourceID = 400)]
     public sealed class VSConsoleOutputPackage : AsyncPackage
     {
         public const string PackageGuidString = "f6dfad00-7979-4fd7-b28b-71336c51f20f";
+        private static EnvDTE.DTE s_DTE = null;
 
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-            service.Debug.Initialize();
-            service.Solution.Initialize();
+            try
+            {
+                service.Debug.Initialize();
+            }
+            catch (Exception ex)
+            {
+                service.Output.WriteError(ex.ToString());
+            }
         }
 
         protected override int QueryClose(out bool canClose)
         {
-            int hr = VSConstants.S_OK;
             {
                 canClose = true;
             }
             try
             {
                 service.Debug.Finalize();
-                hr = base.QueryClose(out canClose);
-                Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(hr);
+                ErrorHandler.ThrowOnFailure(base.QueryClose(out canClose));
             }
             catch (Exception ex) 
             {
-                System.Diagnostics.Debug.WriteLine(ex.ToString());
+                service.Output.WriteError(ex.ToString());
             }
-            return hr;
+            return VSConstants.S_OK;
         }
 
-
+        public static EnvDTE.DTE GetDTE()
+        {
+            if (s_DTE == null)
+            {
+                s_DTE = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
+            }
+            return s_DTE;
+        }
     }
 }

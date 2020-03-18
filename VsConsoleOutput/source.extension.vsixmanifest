@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="VSConsoleOutput.753a2975-4e4c-4067-9e9d-d2d5b867ec23" Version="0.9.5" Language="en-US" Publisher="Nesviatypaskha Oleksii" />
-        <DisplayName>VSConsoleOutput</DisplayName>
+        <Identity Id="VsConsoleOutput.753a2975-4e4c-4067-9e9d-d2d5b867ec23" Version="1.0.1" Language="en-US" Publisher="Nesviatypaskha Oleksii" />
+        <DisplayName>VsConsoleOutput</DisplayName>
         <Description xml:space="preserve">Redirect console output into Visual Studio output window.</Description>
         <MoreInfo>https://github.com/Nesviatypaskha/VsConsoleOutput</MoreInfo>
-        <License>resource\license\lic.txt</License>
-        <Icon>resource\icon\Icon128.png</Icon>
-        <PreviewImage>resource\picture\Preview.png</PreviewImage>
-        <Tags>Console Output</Tags>
+        <License>resource\document\license.txt</License>
+        <Icon>resource\picture\logo.png</Icon>
+        <PreviewImage>resource\picture\preview.png</PreviewImage>
+        <Tags>Console;Output;</Tags>
         <Preview>true</Preview>
     </Metadata>
     <Installation>

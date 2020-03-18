@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.IO.Pipes;
 using System.Text;
 
@@ -9,31 +8,33 @@ namespace service
     {
         class Pipe
         {
-            public static void StartServer(/*Type type*/)
+            private class CONSTANT
+            {
+                public const int BUFFER_SIZE = 256;
+                public const string PIPE_NAME = "VsConsoleOutput";
+            }
+
+            public static void StartServer()
             {
                 try
                 {
-                    bool m_connected = false;
-                    var s_serverStream = new NamedPipeServerStream("VSConsoleOutputPipe", PipeDirection.In);
+                    var a_Context = new NamedPipeServerStream(CONSTANT.PIPE_NAME, PipeDirection.In);
                     {
-                        s_serverStream.WaitForConnection();
+                        a_Context.WaitForConnection();
                     }
-                    const int BUFFERSIZE = 256;
-                    while (s_serverStream.IsConnected)
+                    while (a_Context.IsConnected)
                     {
-                        byte[] buffer = new byte[BUFFERSIZE];
-                        int nRead = s_serverStream.Read(buffer, 0, BUFFERSIZE);
-                        if (nRead != 0)
+                        var a_Context1 = new byte[CONSTANT.BUFFER_SIZE];
+                        var a_Size = a_Context.Read(a_Context1, 0, CONSTANT.BUFFER_SIZE);
+                        if (a_Size != 0)
                         {
-                            m_connected = true;
-                            string line = Encoding.UTF8.GetString(buffer, 0, nRead).Replace("\r", "");
-                            Output.Write(Output.CONSOLE, line);
+                            Output.WriteLine(Encoding.UTF8.GetString(a_Context1, 0, a_Size).Replace("\r", ""));
                         }                      
                     }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine(ex.ToString());
+                    service.Output.WriteError(ex.ToString());
                 }
             }
         }

@@ -1,82 +1,40 @@
-﻿using System;
-using Microsoft.VisualStudio;
+﻿using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Debugger.Interop;
-using Microsoft.VisualStudio.Shell.Interop;
-using EnvDTE;
-using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
-using VsConsoleOutput.service;
+using Microsoft.VisualStudio.Shell.Interop;
+using System;
+using System.IO;
 
 namespace service
 {
     internal sealed class Debug : IDebugEventCallback2, IVsDebuggerEvents
     {
-        public const string BREAKPOINT_MESSAGE = "VSOutputConsole connected";
-
-        public bool m_attached;
-        private bool m_added;
-        private bool m_redirected;
-        private string m_language;
-        private string m_path;
-        private uint m_pid;
-        private static uint _cookie;
-        private System.Threading.Thread m_serverThread;
-        private DTE m_DTE;
-        private static IVsDebugger s_debugger;
-        private static Debug s_Instance;
-        private static readonly object s_Padlock = new object();
-
-        public int OnModeChange(DBGMODE mode)
-        {
-            if (mode  == DBGMODE.DBGMODE_Run)
-            {
-                m_redirected = false;
-                clear();
-                if ((m_serverThread == null) || !m_serverThread.IsAlive)
-                {
-                    m_serverThread = new System.Threading.Thread(output.Pipe.StartServer);
-                    m_serverThread.Start();
-                }
-            }
-            return VSConstants.S_OK;
-        }
+        private static bool s_IsInitialized = false;
+        private static MODULE_INFO[] s_Module = null;
+        private static string s_Path = "";
+        private static System.Threading.Thread s_Thread;
+        private static IVsDebugger s_Service = null;
+        private static Debug s_Instance = null;
+        private static uint s_Cookie = 0;
+        
         public static void Initialize()
         {
-            if (s_Instance == null)
             {
-                Instantiate();
+                s_Service = Package.GetGlobalService(typeof(SVsShellDebugger)) as IVsDebugger;
             }
-            s_debugger.AdviseDebuggerEvents(s_Instance, out _cookie);
-            s_debugger.AdviseDebugEventCallback(s_Instance);
+            if (s_Service != null)
+            {
+                s_Service.AdviseDebuggerEvents(Instance, out s_Cookie);
+                s_Service.AdviseDebugEventCallback(Instance);
+            }
         }
 
         public static void Finalize()
         {
-            if (s_Instance != null)
+            if (s_Service != null)
             {
-                s_debugger.UnadviseDebuggerEvents(_cookie);
-                s_debugger.UnadviseDebugEventCallback(s_Instance);
-            }
-        }
-
-        public Debug()
-        {
-            m_DTE = Package.GetGlobalService(typeof(SDTE)) as DTE;
-            s_debugger = Package.GetGlobalService(typeof(SVsShellDebugger)) as IVsDebugger;
-            m_attached = false;
-            m_added = false;
-            m_redirected = false;
-            m_pid = 0;
-            m_path = getPath();
-        }
-
-        public static void Instantiate()
-        {
-            lock (s_Padlock)
-            {
-                if (s_Instance != null)
-                    throw new InvalidOperationException(string.Format("{0} of Resurrect is already instantiated.", s_Instance.GetType().Name));
-                s_Instance = new Debug();
+                s_Service.UnadviseDebuggerEvents(s_Cookie);
+                s_Service.UnadviseDebugEventCallback(Instance);
             }
         }
 
@@ -86,198 +44,182 @@ namespace service
             {
                 if (s_Instance == null)
                 {
-                    Instantiate();
+                    s_Instance = new Debug();
                 }
                 return s_Instance;
             }
         }
 
-        public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program,
-                            IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
+        public int OnModeChange(DBGMODE mode)
         {
-            if (debugEvent is IDebugSessionDestroyEvent2)
+            if (mode == DBGMODE.DBGMODE_Run)
             {
-                clear();
-            }
-            if (debugEvent is IDebugSessionCreateEvent2)
-            {
-                Output.ClearPane(Output.CONSOLE);
-            }
-            if (m_redirected)
-            {
-                return VSConstants.S_OK;
-            }
-            if (m_attached)
-            {
-                RemoveBraekpoint();
-                m_redirected = true;
-            }
-            if (thread != null)
-            {
-                AddTracePoint(thread);
-                if (m_language == "C#")
+                if ((s_Thread == null) || !s_Thread.IsAlive)
                 {
-                    RedirectStdStreams(thread);
-                }
-                else if ((m_language == "C++") && (process != null))
-                {
-                    m_attached = true;
-                    RedirectStdStreams(process);
+                    s_Thread = new System.Threading.Thread(output.Pipe.StartServer);
+                    s_Thread.Start();
                 }
             }
             return VSConstants.S_OK;
         }
 
-        private void AddTracePoint(IDebugThread2 thread)
+        public int Event(IDebugEngine2 engine, IDebugProcess2 process, IDebugProgram2 program, IDebugThread2 thread, IDebugEvent2 debugEvent, ref Guid riidEvent, uint attributes)
         {
             try
             {
-                if (thread != null)
+                if (debugEvent is IDebugModuleLoadEvent2)
                 {
-                    IEnumDebugFrameInfo2 frame;
-                    thread.EnumFrameInfo(enum_FRAMEINFO_FLAGS.FIF_FUNCNAME | enum_FRAMEINFO_FLAGS.FIF_LANGUAGE | enum_FRAMEINFO_FLAGS.FIF_FRAME, 0, out frame);
-                    uint frames;
-                    frame.GetCount(out frames);
-                    var frameInfo = new FRAMEINFO[1];
-                    uint pceltFetched = 0;
-                    while ((frame.Next(1, frameInfo, ref pceltFetched) == VSConstants.S_OK) && (pceltFetched > 0))
+                    var a_Context = __GetModule(debugEvent as IDebugModuleLoadEvent2);
+                    if (a_Context != null)
                     {
-                        string language = frameInfo[0].m_bstrLanguage;
-                        if (language == "C#")
+                        if (a_Context[0].m_bstrName.ToLower() == "kernel32.dll")
                         {
-                            m_language = "C#";
-                            var fr = frameInfo[0].m_pFrame as IDebugStackFrame2;
-                            if (String.IsNullOrEmpty(frameInfo[0].m_bstrFuncName))
-                            {
-                                continue;
-                            }
-                            if (fr == null)
-                            {
-                                continue;
-                            }
-                            IDebugCodeContext2 ppCodeCxt;
-                            fr.GetCodeContext(out ppCodeCxt);
-                            IDebugDocumentContext2 ppSrcCxt;
-                            ppCodeCxt.GetDocumentContext(out ppSrcCxt);
-                            var begPosition = new TEXT_POSITION[1];
-                            var endPosition = new TEXT_POSITION[1];
-                            ppSrcCxt.GetSourceRange(begPosition, endPosition);
-                            string pbstrFileName;
-                            ppSrcCxt.GetName(enum_GETNAME_TYPE.GN_NAME, out pbstrFileName);
-                            if (m_DTE != null)
-                            {
-                                m_DTE.Debugger.Breakpoints.Add("", System.IO.Path.GetFileName(pbstrFileName), (int)begPosition[0].dwLine + 1);
-                                Breakpoint2 breakpoint2 = m_DTE.Debugger.Breakpoints.Item(m_DTE.Debugger.Breakpoints.Count) as Breakpoint2;
-                                breakpoint2.Message = BREAKPOINT_MESSAGE;
-                                breakpoint2.BreakWhenHit = false;
-                                m_added = true;
-                            }
-                        }
-                        else if (language == "C++")
-                        {
-                            m_language = "C++";
+                            s_Module = a_Context;
                         }
                     }
+                }
+                if (debugEvent is IDebugProgramCreateEvent2)
+                {
+                    {
+                        __Disconnect();
+                    }
+                    {
+                        Output.Clear();
+                    }
+                    return VSConstants.S_OK;
+                }
+                if (debugEvent is IDebugProgramDestroyEvent2)
+                {
+                    {
+                        __Disconnect();
+                    }
+                    return VSConstants.S_OK;
+                }
+                if (debugEvent is IDebugEntryPointEvent2)
+                {
+                    if (s_IsInitialized == false)
+                    {
+                        s_IsInitialized = true;
+                        __Connect(thread);
+                    }
+                    return VSConstants.S_OK;
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(ex.ToString());
+                service.Output.WriteError(ex.ToString());
             }
+            return VSConstants.S_OK;
         }
-        private void RedirectStdStreams(IDebugProcess2 process)
+
+        private void __Connect(IDebugThread2 thread)
         {
-            var ad_process_id = new AD_PROCESS_ID[1];
-            if (process.GetPhysicalProcessId(ad_process_id) == VSConstants.S_OK)
+            if (thread != null)
             {
-                m_pid = ad_process_id[0].dwProcessId;
-                if (m_pid != null)
+                var a_Context = (IEnumDebugFrameInfo2)null;
+                if (thread.EnumFrameInfo(enum_FRAMEINFO_FLAGS.FIF_LANGUAGE | enum_FRAMEINFO_FLAGS.FIF_FRAME, 0, out a_Context) == VSConstants.S_OK)
                 {
-                    var path = getPath();
-                    path = path.Replace("VsConsoleOutput.dll", "cpp.dll");
-                    m_added = DllInjector.GetInstance.Inject(m_pid, path);
-                }
-            }
-        }
-        private void RedirectStdStreams(IDebugThread2 thread)
-        {
-            if (!m_attached && m_added && (thread != null))
-            {
-                if (String.IsNullOrEmpty(m_language) || (m_language != "C#"))
-                    return;
-                IEnumDebugFrameInfo2 frame;
-                thread.EnumFrameInfo(enum_FRAMEINFO_FLAGS.FIF_LANGUAGE | enum_FRAMEINFO_FLAGS.FIF_FRAME, 0, out frame);
-                var frameInfo = new FRAMEINFO[1];
-                uint pceltFetched = 0;
-                while ((frame.Next(1, frameInfo, ref pceltFetched) == VSConstants.S_OK) && (pceltFetched > 0))
-                {
-                    var fr = frameInfo[0].m_pFrame as IDebugStackFrame2;
-                    if (fr == null)
+                    var a_Context1 = new FRAMEINFO[1];
+                    var a_Context2 = (uint)0;
+                    while ((a_Context.Next(1, a_Context1, ref a_Context2) == VSConstants.S_OK) && (a_Context2 > 0))
                     {
-                        continue;
-                    }
-                    IDebugExpressionContext2 expressionContext;
-                    fr.GetExpressionContext(out expressionContext);
-                    if (expressionContext != null)
-                    {
-                        IDebugExpression2 de;
-                        string error;
-                        uint errorCode;
-                        if (expressionContext.ParseText(getCommand(), enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out de, out error, out errorCode) == VSConstants.S_OK)
+                        var a_Context3 = (IDebugExpressionContext2)null;
+                        var a_Context4 = a_Context1[0].m_pFrame as IDebugStackFrame2;
+                        if (a_Context4 != null)
                         {
-                            IDebugProperty2 dp2;
-                           de.EvaluateSync(enum_EVALFLAGS.EVAL_RETURNVALUE, 5000, null, out dp2);
+                            a_Context4.GetExpressionContext(out a_Context3);
+                        }
+                        if (a_Context3 != null)
+                        {
+                            __Execute(a_Context3, __GetLibraryName());
+                            __Execute(a_Context3, __GetFunctionName());
+                            break;
                         }
                     }
                 }
             }
         }
-        private string getCommand()
+
+        private void __Disconnect()
         {
-            string result = null;
-            if (m_language == "C#")
-            {
-                var path = getPath();
-                path = path.Replace("VsConsoleOutput.dll", "c_sharp.dll");
-                path = path.Replace("\\", "\\\\");
-                result = "System.Reflection.Assembly.LoadFrom(\"" + path +
-                          "\").GetType(\"c_sharp.Redirection\", true, true).GetMethod(\"RedirectToPipe\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"" + path +
-                          "\").GetType(\"c_sharp.Redirection\", true, true)), new object[] { });";
-            }
-            return result;
+            s_IsInitialized = false;
+            s_Module = null;
         }
-        private string getPath()
+
+        private string __GetLibraryName()
         {
-            if (m_path == null)
+            var a_Result = __GetPath();
+            if (s_Module != null)
             {
-                m_path = (new Uri(typeof(package.VSConsoleOutputPackage).Assembly.CodeBase)).LocalPath;
+                a_Result += "\\console.proxy.cpp.dll";
+                a_Result = a_Result.Replace("\\", "\\\\");
+                a_Result = "((int (__stdcall *)(const char*))0x77a02990)(\"" + a_Result + "\")";
             }
-            return m_path;
-        }
-        private void RemoveBraekpoint()
-        {
-            foreach (Breakpoint2 bp in m_DTE.Debugger.Breakpoints)
+            else
             {
-                if (bp.Message == BREAKPOINT_MESSAGE)
+                a_Result += "\\console.proxy.cs.dll";
+                a_Result = a_Result.Replace("\\", "\\\\");
+                a_Result = "System.Reflection.Assembly.LoadFrom(\"" + a_Result + "\")";
+            }
+            return a_Result;
+        }
+
+        private string __GetFunctionName()
+        {
+            return (s_Module != null) ? "" : "proxy.Redirection.Connect()";
+        }
+
+        private static string __GetPath()
+        {
+            if (string.IsNullOrEmpty(s_Path))
+            {
+                s_Path = Path.GetDirectoryName((new Uri(typeof(package.VSConsoleOutputPackage).Assembly.CodeBase)).LocalPath);
+            }
+            return s_Path;
+        }
+
+        private static MODULE_INFO[] __GetModule(IDebugModuleLoadEvent2 debugEvent)
+        {
+            if (debugEvent != null)
+            {
+                var a_Context = (IDebugModule2)null;
                 {
-                    bp.Delete();
-                    m_added = false;
+                    var a_Context1 = "";
+                    var a_Context2 = 0;
+                    if (debugEvent.GetModule(out a_Context, ref a_Context1, ref a_Context2) != VSConstants.S_OK)
+                    {
+                        return null;
+                    }
+                }
+                {
+                    var a_Result = new MODULE_INFO[1];
+                    if (a_Context.GetInfo(enum_MODULE_INFO_FIELDS.MIF_ALLFIELDS, a_Result) == VSConstants.S_OK)
+                    {
+                        return a_Result;
+                    }
                 }
             }
+            return null;
         }
-        private void clear()
+
+        private static void __Execute(IDebugExpressionContext2 context, string expression)
         {
-            try
+            if ((context != null) && (string.IsNullOrEmpty(expression) == false))
             {
-                m_attached = false;
-                m_added = false;
-                m_redirected = false;
-                m_pid = 0;
-                RemoveBraekpoint();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex.ToString());
+                var a_Context = (IDebugExpression2)null;
+                {
+                    var a_Context1 = "";
+                    var a_Context2 = (uint)0;
+                    if (context.ParseText(expression, enum_PARSEFLAGS.PARSE_EXPRESSION, 0, out a_Context, out a_Context1, out a_Context2) == VSConstants.S_OK)
+                    {
+                        var a_Context3 = (IDebugProperty2)null;
+                        a_Context.EvaluateSync(enum_EVALFLAGS.EVAL_RETURNVALUE, 2000, null, out a_Context3);
+                    }
+                    else
+                    {
+                        service.Output.WriteError(a_Context1 + "// Error code: " + a_Context2.ToString());
+                    }
+                }
             }
         }
     }
