@@ -23,7 +23,7 @@ namespace proxy
                     FILE_FLAG_DELETE_ON_CLOSE | FILE_ATTRIBUTE_NOT_CONTENT_INDEXED,
                     NULL);
                 {
-                    std::cout << "Attempt to redirect Output Window..." << std::endl;
+                    std::cout << "Console redirected to Output Window in Visual Studio..." << std::endl;
                 }
                 if (s_Pipe != INVALID_HANDLE_VALUE)
                 {
@@ -33,11 +33,7 @@ namespace proxy
                         auto a_Context1 = _fdopen(a_Context, "w");
                         if (a_Context1 != NULL)
                         {
-                            if (_dup2(_fileno(a_Context1), 1) == 0)
-                            {
-                                std::cout << "Console redirected to Output Window in Visual Studio..." << std::endl;
-                            }
-                            else
+                            if (_dup2(_fileno(a_Context1), 1) != 0)
                             {
                                 std::cerr << "ERROR: Console don't redirected correctly (Error code: " << errno << ")" << std::endl;
                             }
