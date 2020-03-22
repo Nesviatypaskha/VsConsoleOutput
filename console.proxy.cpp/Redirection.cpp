@@ -22,31 +22,37 @@ namespace proxy
                     OPEN_ALWAYS,
                     FILE_FLAG_DELETE_ON_CLOSE | FILE_ATTRIBUTE_NOT_CONTENT_INDEXED,
                     NULL);
-                {
-                    std::cout << "Console redirected to Output Window in Visual Studio..." << std::endl;
-                }
                 if (s_Pipe != INVALID_HANDLE_VALUE)
                 {
-                    auto a_Context = _open_osfhandle((intptr_t)s_Pipe, 0);
-                    if (a_Context != -1)
                     {
-                        auto a_Context1 = _fdopen(a_Context, "w");
-                        if (a_Context1 != NULL)
+                        std::cout << "Console redirected to Output Window in Visual Studio..." << std::endl;
+                    }
+                    {
+                        auto a_Context = _open_osfhandle((intptr_t)s_Pipe, 0);
+                        if (a_Context != -1)
                         {
-                            if (_dup2(_fileno(a_Context1), 1) != 0)
+                            auto a_Context1 = _fdopen(a_Context, "w");
+                            if (a_Context1 != NULL)
                             {
-                                std::cerr << "ERROR: Console don't redirected correctly (Error code: " << errno << ")" << std::endl;
+                                if (_dup2(_fileno(a_Context1), 1) != 0)
+                                {
+                                    std::cerr << "ERROR: Console don't redirected correctly (Error code: " << errno << ")" << std::endl;
+                                }
+                            }
+                            else
+                            {
+                                std::cerr << "ERROR: Console don't redirected because pipe not opened" << std::endl;
                             }
                         }
                         else
                         {
-                            std::cerr << "ERROR: Console don't redirected because pipe not opened" << std::endl;
+                            std::cerr << "ERROR: Console don't redirected because handle not created" << std::endl;
                         }
                     }
-                    else
-                    {
-                        std::cerr << "ERROR: Console don't redirected because pipe not created" << std::endl;
-                    }
+                }
+                else
+                {
+                    std::cerr << "ERROR: Console don't redirected because pipe not created" << std::endl;
                 }
             }
             catch (std::exception & ex)

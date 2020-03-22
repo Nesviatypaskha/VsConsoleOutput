@@ -6,12 +6,15 @@ namespace proxy
 {
     public class Redirection
     {
-        private static NamedPipeClientStream s_Pipe;
+        private static NamedPipeClientStream s_Pipe = null;
 
         public static void Connect()
         {
             try
             {
+                {
+                    AppDomain.CurrentDomain.ProcessExit += new EventHandler(__OnExit);
+                }
                 {
                     s_Pipe = new NamedPipeClientStream(".", "VsConsoleOutput", PipeDirection.Out);
                 }
@@ -25,8 +28,8 @@ namespace proxy
                         var a_Context = new StreamWriter(s_Pipe);
                         if (a_Context != null)
                         {
-                            Console.WriteLine("Console redirected to Output Window in Visual Studio...");
                             a_Context.AutoFlush = true;
+                            Console.WriteLine("Console redirected to Output Window in Visual Studio...");
                             Console.SetOut(a_Context);
                         }
                         else
@@ -49,14 +52,24 @@ namespace proxy
                 Console.WriteLine("ERROR: " + ex.ToString());
             }
         }
-    }
-}
 
-static class Program
-{
-    static void Main(string[] args)
-    {
-        proxy.Redirection.Connect();
-        System.Diagnostics.Trace.WriteLine("!!!!Startup function called!!!!");
+        public static void Disconnect()
+        {
+            if (s_Pipe != null)
+            {
+                s_Pipe.Close();
+                s_Pipe = null;
+            }
+        }
+
+        private static void __OnExit(object sender, EventArgs e)
+        {
+            {
+                Disconnect();
+            }
+            {
+                Console.WriteLine("Console redirection is stopped...");
+            }
+        }
     }
 }

@@ -54,6 +54,9 @@ namespace service
         {
             if (mode == DBGMODE.DBGMODE_Run)
             {
+                {
+                    Output.Clear();
+                }
                 if ((s_Thread == null) || !s_Thread.IsAlive)
                 {
                     s_Thread = new System.Threading.Thread(output.Pipe.StartServer);
@@ -80,18 +83,17 @@ namespace service
                 }
                 if (debugEvent is IDebugProgramCreateEvent2)
                 {
+                    if (s_IsInitialized)
                     {
-                        __Disconnect();
-                    }
-                    {
-                        Output.Clear();
+                        s_IsInitialized = false;
+                        s_Module = null;
                     }
                     return VSConstants.S_OK;
                 }
                 if (debugEvent is IDebugProgramDestroyEvent2)
                 {
                     {
-                        __Disconnect();
+                        s_IsInitialized = false;
                     }
                     return VSConstants.S_OK;
                 }
@@ -100,7 +102,8 @@ namespace service
                     if (s_IsInitialized == false)
                     {
                         s_IsInitialized = true;
-                        __Connect(thread);
+                        __Execute(thread, __GetLibraryName());
+                        __Execute(thread, __GetFunctionName());
                     }
                     return VSConstants.S_OK;
                 }
@@ -112,41 +115,7 @@ namespace service
             return VSConstants.S_OK;
         }
 
-        private void __Connect(IDebugThread2 thread)
-        {
-            if (thread != null)
-            {
-                var a_Context = (IEnumDebugFrameInfo2)null;
-                if (thread.EnumFrameInfo(enum_FRAMEINFO_FLAGS.FIF_LANGUAGE | enum_FRAMEINFO_FLAGS.FIF_FRAME, 0, out a_Context) == VSConstants.S_OK)
-                {
-                    var a_Context1 = new FRAMEINFO[1];
-                    var a_Context2 = (uint)0;
-                    while ((a_Context.Next(1, a_Context1, ref a_Context2) == VSConstants.S_OK) && (a_Context2 > 0))
-                    {
-                        var a_Context3 = (IDebugExpressionContext2)null;
-                        var a_Context4 = a_Context1[0].m_pFrame as IDebugStackFrame2;
-                        if (a_Context4 != null)
-                        {
-                            a_Context4.GetExpressionContext(out a_Context3);
-                        }
-                        if (a_Context3 != null)
-                        {
-                            __Execute(a_Context3, __GetLibraryName());
-                            __Execute(a_Context3, __GetFunctionName());
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        private void __Disconnect()
-        {
-            s_IsInitialized = false;
-            s_Module = null;
-        }
-
-        private string __GetLibraryName()
+        private static string __GetLibraryName()
         {
             var a_Result = __GetPath();
             if (s_Module != null)
@@ -164,7 +133,7 @@ namespace service
             return a_Result;
         }
 
-        private string __GetFunctionName()
+        private static string __GetFunctionName()
         {
             return (s_Module != null) ? "" : "proxy.Redirection.Connect()";
         }
@@ -200,6 +169,40 @@ namespace service
                 }
             }
             return null;
+        }
+
+        private static void __Execute(IDebugThread2 thread, string expression)
+        {
+            try
+            {
+                if (thread != null)
+                {
+                    var a_Context = (IEnumDebugFrameInfo2)null;
+                    if (thread.EnumFrameInfo(enum_FRAMEINFO_FLAGS.FIF_LANGUAGE | enum_FRAMEINFO_FLAGS.FIF_FRAME, 0, out a_Context) == VSConstants.S_OK)
+                    {
+                        var a_Context1 = new FRAMEINFO[1];
+                        var a_Context2 = (uint)0;
+                        while ((a_Context.Next(1, a_Context1, ref a_Context2) == VSConstants.S_OK) && (a_Context2 > 0))
+                        {
+                            var a_Context3 = (IDebugExpressionContext2)null;
+                            var a_Context4 = a_Context1[0].m_pFrame as IDebugStackFrame2;
+                            if (a_Context4 != null)
+                            {
+                                a_Context4.GetExpressionContext(out a_Context3);
+                            }
+                            if (a_Context3 != null)
+                            {
+                                __Execute(a_Context3, expression);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                service.Output.WriteError(ex.ToString());
+            }
         }
 
         private static void __Execute(IDebugExpressionContext2 context, string expression)
