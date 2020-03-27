@@ -64,11 +64,18 @@ namespace proxy
 
         private static void __OnExit(object sender, EventArgs e)
         {
+            try
             {
-                Disconnect();
+                {
+                    Disconnect();
+                }
+                {
+                    Console.WriteLine("Console redirection is stopped...");
+                }
             }
+            catch (Exception ex)
             {
-                Console.WriteLine("Console redirection is stopped...");
+                Console.WriteLine("ERROR: " + ex.ToString());
             }
         }
     }
