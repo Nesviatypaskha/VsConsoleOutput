@@ -52,7 +52,7 @@ namespace proxy
                 }
                 else
                 {
-                    std::cerr << "ERROR: Console don't redirected because pipe not created" << std::endl;
+                    std::cerr << "ERROR : Console don't redirected because pipe not created" << std::endl;
                 }
             }
             catch (std::exception & ex)
@@ -77,14 +77,9 @@ HANDLE proxy::Redirection::s_Pipe = INVALID_HANDLE_VALUE;
 
 BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved)
 {
-    switch (reason)
+    if (reason == DLL_PROCESS_ATTACH)
     {
-    case DLL_PROCESS_ATTACH:
         proxy::Redirection::Connect();
-        break;
-    case DLL_PROCESS_DETACH:
-        proxy::Redirection::Disconnect();
-        break;
     }
     return TRUE;
 }

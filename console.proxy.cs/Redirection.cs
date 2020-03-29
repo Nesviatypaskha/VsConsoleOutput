@@ -17,6 +17,7 @@ namespace proxy
                 }
                 {
                     s_Pipe = new NamedPipeClientStream(".", "VsConsoleOutput", PipeDirection.Out);
+                    //s_Pipe = new NamedPipeClientStream(".", "VSConsoleOutputPipe_test", PipeDirection.Out);
                 }
                 if (s_Pipe != null)
                 {
@@ -57,7 +58,7 @@ namespace proxy
         {
             if (s_Pipe != null)
             {
-                s_Pipe.Close();
+                s_Pipe.Dispose();
                 s_Pipe = null;
             }
         }
@@ -69,6 +70,7 @@ namespace proxy
                 {
                     Disconnect();
                 }
+                if (s_Pipe != null)
                 {
                     Console.WriteLine("Console redirection is stopped...");
                 }
