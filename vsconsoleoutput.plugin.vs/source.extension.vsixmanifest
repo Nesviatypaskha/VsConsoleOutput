@@ -9,7 +9,6 @@
         <Icon>resource\picture\logo.png</Icon>
         <PreviewImage>resource\picture\preview.png</PreviewImage>
         <Tags>Console;Output;</Tags>
-        <Preview>true</Preview>
     </Metadata>
     <Installation>
         <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.Community" />
