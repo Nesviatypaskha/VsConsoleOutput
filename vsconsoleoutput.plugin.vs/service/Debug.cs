@@ -14,16 +14,14 @@ namespace service
     {
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
-
         private static bool s_IsInitialized = false;
-        private static bool s_Added = false;
         private static MODULE_INFO[] s_Module = null;
         private static string s_Path = "";
         private static IVsDebugger s_Service = null;
         private static Debug s_Instance = null;
         private static uint s_Cookie = 0;
-        private static DTE s_DTE;
-        private static output.Pipe s_Server;
+        private static DTE s_DTE = null;
+        private static output.Pipe s_Server = null;
 
         private const string BREAKPOINT_MESSAGE = "VSOutputConsole connected";
 
@@ -34,8 +32,8 @@ namespace service
                 s_DTE = Package.GetGlobalService(typeof(SDTE)) as DTE;
             }
             {
-                var server = new output.Pipe();
-                server.Start();
+                s_Server = new output.Pipe();
+                s_Server.Start();
             }
             if (s_Service != null)
             {
@@ -75,7 +73,6 @@ namespace service
                 if (!s_IsInitialized)
                 {
                     s_Module = null;
-                    s_Added = false;
                     Output.Clear();
                 }
             }
@@ -164,7 +161,7 @@ namespace service
             try
             {
                 if (thread != null)
-                    {
+                {
                     IEnumDebugFrameInfo2 frame;
                     thread.EnumFrameInfo(enum_FRAMEINFO_FLAGS.FIF_FUNCNAME, 0, out frame);
                     var frameInfo = new FRAMEINFO[1];

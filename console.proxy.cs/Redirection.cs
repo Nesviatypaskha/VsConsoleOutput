@@ -58,6 +58,7 @@ namespace proxy
         {
             if (s_Pipe != null)
             {
+                s_Pipe.Close();
                 s_Pipe.Dispose();
                 s_Pipe = null;
             }
