@@ -17,7 +17,7 @@ namespace service
 
             private bool m_Running;
             private Thread m_RunningThread;
-            private EventWaitHandle m_TerminateHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+            //private EventWaitHandle m_TerminateHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
 
             private void ServerLoop()
             {
@@ -26,7 +26,7 @@ namespace service
                     ProcessNextClient();
                 }
 
-                m_TerminateHandle.Set();
+                //m_TerminateHandle.Set();
             }
 
             public void Start()
@@ -39,7 +39,7 @@ namespace service
             public void Stop()
             {
                 m_Running = false;
-                m_TerminateHandle.WaitOne();
+                //m_TerminateHandle.WaitOne();
             }
 
             public void ProcessClientThread(object o)

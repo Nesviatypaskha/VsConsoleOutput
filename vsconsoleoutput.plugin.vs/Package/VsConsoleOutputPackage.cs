@@ -15,7 +15,7 @@ namespace package
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasMultipleProjects_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasSingleProject_string, PackageAutoLoadFlags.BackgroundLoad)]
-    [InstalledProductRegistration("VsConsoleOutput", "VsConsoleOutput", "1.0.1", IconResourceID = 400)]
+    [InstalledProductRegistration("VsConsoleOutput", "VsConsoleOutput", "1.0.2", IconResourceID = 400)]
     public sealed class VSConsoleOutputPackage : AsyncPackage
     {
         public const string PackageGuidString = "f6dfad00-7979-4fd7-b28b-71336c51f20f";

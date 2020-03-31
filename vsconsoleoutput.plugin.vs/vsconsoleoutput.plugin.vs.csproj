@@ -76,6 +76,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Content Include="resource\picture\preview_metaproject.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\console.proxy.cpp\console.proxy.cpp.vcxproj">
