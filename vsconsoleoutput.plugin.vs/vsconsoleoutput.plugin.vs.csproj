@@ -48,6 +48,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="service\Debug.cs" />
+    <Compile Include="ui\Input.cs" />
+    <Compile Include="ui\InputFactory.cs" />
     <Compile Include="service\Output.cs" />
     <Compile Include="service\Pipe.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -60,7 +62,16 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="16.0.202" ExcludeAssets="runtime" />
