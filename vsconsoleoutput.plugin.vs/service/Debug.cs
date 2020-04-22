@@ -44,11 +44,9 @@ namespace service
 
         public static void Finalize()
         {
-            {
-                s_Server.Stop();
-            }
             if (s_Service != null)
             {
+                s_Server.Stop();
                 s_Service.UnadviseDebuggerEvents(s_Cookie);
                 s_Service.UnadviseDebugEventCallback(Instance);
             }
@@ -207,7 +205,6 @@ namespace service
                     var a_Context1 = GetProcAddress((IntPtr)(s_Module[0].m_addrLoadAddress), "LoadLibraryA");
                     a_Result += "\\console.proxy.cpp.dll";
                     a_Result = a_Result.Replace("\\", "\\\\");
-                    var asdf = a_Context1.ToString("X");
                     a_Result = "((int (__stdcall *)(const char*))0x" + a_Context1.ToString("X") + ")(\"" + a_Result + "\")";
                 }
                 else
