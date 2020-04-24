@@ -48,8 +48,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="service\Debug.cs" />
-    <Compile Include="ui\Input.cs" />
-    <Compile Include="ui\InputFactory.cs" />
     <Compile Include="service\Output.cs" />
     <Compile Include="service\Pipe.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
