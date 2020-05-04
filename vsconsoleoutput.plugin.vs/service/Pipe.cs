@@ -69,6 +69,7 @@ namespace service
                 }
                 catch (Exception e)
                 {
+                    Thread.Sleep(500);
                 }
             }
         }
