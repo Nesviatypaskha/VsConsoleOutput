@@ -81,6 +81,7 @@
     <Content Include="resource\picture\logo.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Content Include="resource\picture\preview_cpp.png" />
     <Content Include="resource\picture\Preview.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
