@@ -8,7 +8,7 @@ namespace proxy
     {
         private static NamedPipeClientStream s_Pipe = null;
 
-        public static void Connect()
+        public static void Connect(string serverId)
         {
             try
             {
@@ -16,8 +16,7 @@ namespace proxy
                     AppDomain.CurrentDomain.ProcessExit += new EventHandler(__OnExit);
                 }
                 {
-                    s_Pipe = new NamedPipeClientStream(".", "VsConsoleOutput", PipeDirection.Out);
-                    //s_Pipe = new NamedPipeClientStream(".", "VSConsoleOutputPipe_test", PipeDirection.Out);
+                    s_Pipe = new NamedPipeClientStream(".", serverId, PipeDirection.Out);
                 }
                 if (s_Pipe != null)
                 {
@@ -30,6 +29,7 @@ namespace proxy
                         if (a_Context != null)
                         {
                             a_Context.AutoFlush = true;
+                            Console.WriteLine(serverId);
                             Console.WriteLine("Console redirected to Output Window in Visual Studio...");
                             Console.SetOut(a_Context);
                         }

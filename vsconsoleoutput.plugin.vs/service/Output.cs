@@ -1,4 +1,6 @@
 ﻿using Microsoft.VisualStudio.Shell.Interop;
+using Shell = Microsoft.VisualStudio.Shell;
+using Task = System.Threading.Tasks.Task;
 using System;
 
 namespace service
@@ -7,8 +9,9 @@ namespace service
     {
         private static IVsOutputWindowPane s_Pane = null;
 
-        public static void Clear()
+        public static async Task ClearAsync()
         {
+            await Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             try
             {
                 var a_Context = __GetPane();
@@ -24,14 +27,15 @@ namespace service
             }
         }
 
-        public static void WriteLine(string message)
+        public static async Task WriteLineAsync(string message)
         {
             try
             {
+                await Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var a_Context = __GetPane();
                 if (a_Context != null)
                 {
-                    a_Context.OutputString(message);
+                    a_Context.OutputStringThreadSafe(message);
                     a_Context.Activate();
                 }
             }
@@ -50,6 +54,7 @@ namespace service
 
         private static IVsOutputWindowPane __GetPane()
         {
+            Shell.ThreadHelper.ThrowIfNotOnUIThread();
             try
             {
                 if (s_Pane == null)

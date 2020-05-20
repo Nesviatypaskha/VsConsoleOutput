@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -15,18 +14,17 @@ namespace package
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasMultipleProjects_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasSingleProject_string, PackageAutoLoadFlags.BackgroundLoad)]
-    [InstalledProductRegistration("VsConsoleOutput", "VsConsoleOutput", "1.0.5", IconResourceID = 400)]
+    [InstalledProductRegistration("VsConsoleOutput", "VsConsoleOutput", "1.0.6", IconResourceID = 400)]
     public sealed class VSConsoleOutputPackage : AsyncPackage
     {
         public const string PackageGuidString = "f6dfad00-7979-4fd7-b28b-71336c51f20f";
-        private static EnvDTE.DTE s_DTE = null;
 
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             try
             {
-                service.Debug.Initialize();
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await service.Debug.InitializeAsync(this);
             }
             catch (Exception ex)
             {
@@ -41,7 +39,7 @@ namespace package
             }
             try
             {
-                service.Debug.Finalize();
+                _ = service.Debug.FinalizeAsync();
                 ErrorHandler.ThrowOnFailure(base.QueryClose(out canClose));
             }
             catch (Exception ex) 
@@ -49,15 +47,6 @@ namespace package
                 service.Output.WriteError(ex.ToString());
             }
             return VSConstants.S_OK;
-        }
-
-        public static EnvDTE.DTE GetDTE()
-        {
-            if (s_DTE == null)
-            {
-                s_DTE = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
-            }
-            return s_DTE;
         }
     }
 }

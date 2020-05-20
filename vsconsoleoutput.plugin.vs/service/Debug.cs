@@ -4,9 +4,17 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Debugger.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.Win32;
+using service.pipes;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using Shell = Microsoft.VisualStudio.Shell;
+using Task = System.Threading.Tasks.Task;
+
 
 namespace service
 {
@@ -14,6 +22,10 @@ namespace service
     {
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr LoadLibraryA(string libFilename);
+
         private static bool s_IsInitialized = false;
         private static MODULE_INFO[] s_Module = null;
         private static string s_Path = "";
@@ -21,32 +33,46 @@ namespace service
         private static Debug s_Instance = null;
         private static uint s_Cookie = 0;
         private static DTE s_DTE = null;
-        private static output.Pipe s_Server = null;
+        private static PipePool s_PipePool = null;
+        private static string s_ServerId = "";
+        private static Dictionary<string, Int64> s_Addresses = null;
 
         private const string BREAKPOINT_MESSAGE = "VSOutputConsole connected";
+        private const string SERVER_PREFIX = "VsConsoleOutput";
 
-        public static void Initialize()
+        public static async Task InitializeAsync(Shell.IAsyncServiceProvider provider)
         {
+            await Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             {
-                s_Service = Package.GetGlobalService(typeof(SVsShellDebugger)) as IVsDebugger;
-                s_DTE = Package.GetGlobalService(typeof(SDTE)) as DTE;
+                s_ServerId = SERVER_PREFIX;// + System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
+                s_PipePool = new PipePool(s_ServerId);
+                s_PipePool.Start();
             }
             {
-                s_Server = new output.Pipe();
-                s_Server.Start();
+                s_Service = await provider.GetServiceAsync(typeof(SVsShellDebugger)) as IVsDebugger;
+                s_DTE = await provider.GetServiceAsync(typeof(SDTE)) as DTE;
             }
             if (s_Service != null)
             {
                 s_Service.AdviseDebuggerEvents(Instance, out s_Cookie);
                 s_Service.AdviseDebugEventCallback(Instance);
             }
+            try
+            {
+                await Task.Run(() => InitAdresses());
+            }
+            catch (Exception ex)
+            {
+                service.Output.WriteError(ex.ToString());
+            }
         }
 
-        public static void Finalize()
+        public static async Task FinalizeAsync()
         {
+            await Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             if (s_Service != null)
             {
-                s_Server.Stop();
+                s_PipePool.Stop();
                 s_Service.UnadviseDebuggerEvents(s_Cookie);
                 s_Service.UnadviseDebugEventCallback(Instance);
             }
@@ -63,7 +89,40 @@ namespace service
                 return s_Instance;
             }
         }
-
+        public static void InitAdresses()
+        {
+            try
+            {
+                {
+                    var a_Context = new ProcessStartInfo("vsconsoleoutput.helper.exe");
+                    a_Context.WindowStyle = ProcessWindowStyle.Hidden;
+                    System.Diagnostics.Process.Start(a_Context);
+                    System.Threading.Thread.Sleep(500);
+                }
+                s_Addresses = new Dictionary<string, Int64>();
+                {
+                    var a_Context = LoadLibraryA("kernel32.dll");
+                    if (a_Context != IntPtr.Zero)
+                    {
+                        s_Addresses.Add("LoadLibraryA_x86", GetProcAddress(a_Context, "LoadLibraryA").ToInt64());
+                        s_Addresses.Add("GetProcAddress_x86", GetProcAddress(a_Context, "GetProcAddress").ToInt64());
+                    }
+                }
+                {
+                    var a_Context = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\VSConsoleOutput");
+                    if (a_Context != null)
+                    {
+                        s_Addresses.Add("LoadLibraryA_x64", (Int64)a_Context.GetValue("LoadLibraryA_x64"));
+                        s_Addresses.Add("GetProcAddress_x64", (Int64)a_Context.GetValue("GetProcAddress_x64"));
+                        a_Context.Close();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                service.Output.WriteError(ex.ToString());
+            }
+        }
         public int OnModeChange(DBGMODE mode)
         {
             if (mode == DBGMODE.DBGMODE_Run)
@@ -71,7 +130,7 @@ namespace service
                 if (!s_IsInitialized)
                 {
                     s_Module = null;
-                    Output.Clear();
+                    _ = Output.ClearAsync();
                 }
             }
             return VSConstants.S_OK;
@@ -81,6 +140,59 @@ namespace service
         {
             try
             {
+//#if DEBUG
+//                if (debugEvent is IDebugSessionCreateEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugSessionCreateEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugProcessCreateEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugProcessCreateEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugCustomEvent110)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugCustomEvent110.{0}\n", attributes));
+//                else if (debugEvent is IDebugProgramCreateEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugProgramCreateEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugModuleLoadEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugModuleLoadEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugThreadCreateEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugThreadCreateEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugTelemetryDetailsEvent150)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugTelemetryDetailsEvent150.{0}\n", attributes));
+//                else if (debugEvent is IDebugLoadCompleteEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugLoadCompleteEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugEntryPointEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugEntryPointEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugProcessContinueEvent100)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugProcessContinueEvent100.{0}\n", attributes));
+//                else if (debugEvent is IDebugThreadDestroyEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugThreadDestroyEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugProgramDestroyEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugProgramDestroyEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugProcessDestroyEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugProcessDestroyEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugSessionDestroyEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugSessionDestroyEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugBreakpointErrorEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugBreakpointErrorEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugBreakpointBoundEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugBreakpointBoundEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugMessageEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugMessageEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugOutputStringEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugOutputStringEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugExceptionEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugExceptionEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugCurrentThreadChangedEvent100)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugCurrentThreadChangedEvent100.{0}\n", attributes));
+//                else if (debugEvent is IDebugBreakEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugBreakEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugBreakpointEvent2)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugBreakpointEvent2.{0}\n", attributes));
+//                else if (debugEvent is IDebugThreadSuspendChangeEvent100)
+//                    Output.WriteLine(String.Format("debugEvent is IDebugThreadSuspendChangeEvent100.{0}\n", attributes));
+//                else
+//                    Output.WriteLine(String.Format("Event Command.name = {0}.{1}\n", riidEvent.ToString("B"), attributes));
+
+//                Output.WriteLine(String.Format("engine = {0}; process = {1}; program = {2}; thread = {3}\n",
+//                    engine == null ? "NULL" : "YESS", process == null ? "NULL" : "YESS", program == null ? "NULL" : "YESS", thread == null ? "NULL" : "YESS"));
+//#endif
                 if (debugEvent is IDebugModuleLoadEvent2)
                 {
                     var a_Context1 = __GetModule(debugEvent as IDebugModuleLoadEvent2);
@@ -115,13 +227,13 @@ namespace service
                 }
                 if ((debugEvent is IDebugThreadCreateEvent2) && (s_Module != null) && (s_Module[0].m_bstrName.ToLower() == "system.private.corelib.dll"))
                 {
-                    __AddTracePoint(thread);
+                    _ = __AddTracePointAsync(thread);
                 }
                 if (debugEvent is IDebugEntryPointEvent2)
                 {
                     if ((s_Module != null) && (s_Module[0].m_bstrName.ToLower() == "system.private.corelib.dll"))
                     {
-                        __AddTracePoint(thread);
+                        _ = __AddTracePointAsync(thread);
                     }
                     else if (s_IsInitialized == false)
                     {
@@ -141,7 +253,7 @@ namespace service
                         {
                             __Execute(thread, __GetLibraryName());
                             __Execute(thread, __GetFunctionName());
-                            __RemoveBraekpoint();
+                            _ = __RemoveBraekpointAsync();
                         }
                     }
                     return VSConstants.S_OK;
@@ -154,8 +266,9 @@ namespace service
             return VSConstants.S_OK;
         }
 
-        private void __AddTracePoint(IDebugThread2 thread)
+        private static async Task __AddTracePointAsync(IDebugThread2 thread)
         {
+            await Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             try
             {
                 if (thread != null)
@@ -185,33 +298,70 @@ namespace service
                 service.Output.WriteError(ex.ToString());
             }
         }
-        private void __RemoveBraekpoint()
+        private static async Task __RemoveBraekpointAsync()
         {
-            foreach (Breakpoint2 bp in s_DTE.Debugger.Breakpoints)
+            await Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            if (s_DTE != null)
             {
-                if (bp.Message == BREAKPOINT_MESSAGE)
+                foreach (Breakpoint2 bp in s_DTE.Debugger.Breakpoints)
                 {
-                    bp.Delete();
+                    if (bp.Message == BREAKPOINT_MESSAGE)
+                    {
+                        bp.Delete();
+                    }
                 }
             }
         }
         private static string __GetLibraryName()
         {
             var a_Result = __GetPath();
-            if ((s_Module != null) )
+            if ((s_Module != null))
             {
                 if (s_Module[0].m_bstrName.ToLower() == "kernel32.dll")
                 {
-                    var a_Context1 = GetProcAddress((IntPtr)(s_Module[0].m_addrLoadAddress), "LoadLibraryA");
-                    a_Result += "\\console.proxy.cpp.dll";
-                    a_Result = a_Result.Replace("\\", "\\\\");
-                    a_Result = "((int (__stdcall *)(const char*))0x" + a_Context1.ToString("X") + ")(\"" + a_Result + "\")";
+                    var DllHandle = LoadLibraryA(s_Module[0].m_bstrName);
+                    {
+                        //{
+                        //    var a_Context1 = GetProcAddress((IntPtr)(s_Module[0].m_addrLoadAddress), "LoadLibraryA");
+                        //    a_Result += "\\console.proxy.cpp.dll";
+                        //    a_Result = a_Result.Replace("\\", "\\\\");
+                        //    a_Result = "((int (__stdcall *)(const char*))0x" + a_Context1.ToString("X") + ")(\"" + a_Result + "\")";
+                        //}
+                        {
+                            Int64 a_Context1 = 0;
+                            var a_Context2 = false;
+                            if (s_Module[0].m_dwModuleFlags.HasFlag(enum_MODULE_FLAGS.MODULE_FLAG_64BIT))
+                            {
+                                a_Context2 = s_Addresses.TryGetValue("LoadLibraryA_x64", out a_Context1);
+                                a_Result += "\\console.proxy.cpp.x64.dll";
+                                //Output.WriteLineAsync("THIS IS x64\n");
+                            }
+                            else
+                            {
+                                a_Context2 = s_Addresses.TryGetValue("LoadLibraryA_x86", out a_Context1);
+                                a_Result += "\\console.proxy.cpp.dll";
+                                //Output.WriteLineAsync("THIS IS x86\n");
+                            }
+
+                            if (a_Context2)
+                            {
+                                a_Result = a_Result.Replace("\\", "\\\\");
+                                a_Result = "((int (__stdcall *)(const char*))0x" + a_Context1.ToString("X") + ")(\"" + a_Result + "\")";
+                            }
+                            else
+                            {
+                                a_Result = "";
+                            }
+                        }
+                    }
                 }
                 else
                 {
                     a_Result += "\\console.proxy.cs.dll";
                     a_Result = a_Result.Replace("\\", "\\\\");
-                    a_Result = "System.Reflection.Assembly.LoadFrom(\"" + a_Result + "\").GetType(\"proxy.Redirection\").GetMethod(\"Connect\").Invoke(null, null)";
+                    a_Result = "System.Reflection.Assembly.LoadFrom(\"" + a_Result +
+                                "\").GetType(\"proxy.Redirection\", true, true).GetMethod(\"Connect\").Invoke(Activator.CreateInstance(System.Reflection.Assembly.LoadFrom(\"" + a_Result +
+                                "\").GetType(\"proxy.Redirection\", true, true)), new object[] {\"" + s_ServerId + "\"});";
                 }
             }
             else
@@ -225,7 +375,7 @@ namespace service
 
         private static string __GetFunctionName()
         {
-            return (s_Module != null) ? "" : "proxy.Redirection.Connect()";
+            return (s_Module != null) ? "" : "proxy.Redirection.Connect(" + s_ServerId + ")";
         }
 
         private static string __GetPath()
@@ -294,7 +444,6 @@ namespace service
                 service.Output.WriteError(ex.ToString());
             }
         }
-
         private static void __Execute(IDebugExpressionContext2 context, string expression)
         {
             if ((context != null) && (string.IsNullOrEmpty(expression) == false))

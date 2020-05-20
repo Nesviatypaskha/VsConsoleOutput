@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="VsConsoleOutput.753a2975-4e4c-4067-9e9d-d2d5b867ec23" Version="1.0.5" Language="en-US" Publisher="Nesviatypaskha Oleksii" />
+        <Identity Id="VsConsoleOutput.753a2975-4e4c-4067-9e9d-d2d5b867ec23" Version="1.0.6" Language="en-US" Publisher="Nesviatypaskha Oleksii" />
         <DisplayName>VsConsoleOutput</DisplayName>
         <Description xml:space="preserve">Redirect console output into Visual Studio output window.</Description>
         <MoreInfo>https://github.com/Nesviatypaskha/VsConsoleOutput</MoreInfo>
