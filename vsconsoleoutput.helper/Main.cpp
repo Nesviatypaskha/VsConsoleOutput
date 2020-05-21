@@ -1,4 +1,4 @@
-#include "WinReg.hpp"   // Module to test
+#include "WinReg.hpp"
 #include <exception>
 #include <iostream>
 
@@ -6,6 +6,9 @@ int main()
 {
     try
     {
+        //TODO Check is system x64?
+        //TODO: Check is system x64?
+        
         const std::wstring VSConsoleOutputSubKey = L"SOFTWARE\\VSConsoleOutput";
         winreg::RegKey key(HKEY_CURRENT_USER, VSConsoleOutputSubKey);
 

@@ -4,6 +4,16 @@
 #include <io.h>
 #include <stdio.h>
 #include <windows.h>
+#include <fcntl.h>s
+
+extern "C"
+{
+    extern __declspec(dllexport) int test()
+    {
+        std::cout << "test..." << std::endl;
+        return 42;
+    }
+}
 
 namespace proxy
 {
@@ -28,7 +38,7 @@ namespace proxy
                         std::cout << "Console redirected to Output Window in Visual Studio..." << std::endl;
                     }
                     {
-                        auto a_Context = _open_osfhandle((intptr_t)s_Pipe, 0);
+                        auto a_Context = _open_osfhandle((intptr_t)s_Pipe, _O_RDWR);
                         if (a_Context != -1)
                         {
                             auto a_Context1 = _fdopen(a_Context, "w");
@@ -37,6 +47,10 @@ namespace proxy
                                 if (_dup2(_fileno(a_Context1), 1) != 0)
                                 {
                                     std::cerr << "ERROR: Console don't redirected correctly (Error code: " << errno << ")" << std::endl;
+                                }
+                                else
+                                {
+                                    setvbuf(stdout, NULL, _IONBF, 0);
                                 }
                             }
                             else
@@ -55,7 +69,7 @@ namespace proxy
                     std::cerr << "ERROR : Console don't redirected because pipe not created" << std::endl;
                 }
             }
-            catch (std::exception & ex)
+            catch (std::exception& ex)
             {
                 std::cerr << "ERROR: " << ex.what() << std::endl;
             }

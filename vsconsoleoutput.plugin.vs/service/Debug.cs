@@ -321,12 +321,6 @@ namespace service
                 {
                     var DllHandle = LoadLibraryA(s_Module[0].m_bstrName);
                     {
-                        //{
-                        //    var a_Context1 = GetProcAddress((IntPtr)(s_Module[0].m_addrLoadAddress), "LoadLibraryA");
-                        //    a_Result += "\\console.proxy.cpp.dll";
-                        //    a_Result = a_Result.Replace("\\", "\\\\");
-                        //    a_Result = "((int (__stdcall *)(const char*))0x" + a_Context1.ToString("X") + ")(\"" + a_Result + "\")";
-                        //}
                         {
                             Int64 a_Context1 = 0;
                             var a_Context2 = false;
