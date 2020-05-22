@@ -29,7 +29,6 @@ namespace proxy
                         if (a_Context != null)
                         {
                             a_Context.AutoFlush = true;
-                            Console.WriteLine(serverId);
                             Console.WriteLine("Console redirected to Output Window in Visual Studio...");
                             Console.SetOut(a_Context);
                         }

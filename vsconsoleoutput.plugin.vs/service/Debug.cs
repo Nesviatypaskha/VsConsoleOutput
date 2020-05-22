@@ -140,59 +140,6 @@ namespace service
         {
             try
             {
-//#if DEBUG
-//                if (debugEvent is IDebugSessionCreateEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugSessionCreateEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugProcessCreateEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugProcessCreateEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugCustomEvent110)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugCustomEvent110.{0}\n", attributes));
-//                else if (debugEvent is IDebugProgramCreateEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugProgramCreateEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugModuleLoadEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugModuleLoadEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugThreadCreateEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugThreadCreateEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugTelemetryDetailsEvent150)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugTelemetryDetailsEvent150.{0}\n", attributes));
-//                else if (debugEvent is IDebugLoadCompleteEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugLoadCompleteEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugEntryPointEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugEntryPointEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugProcessContinueEvent100)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugProcessContinueEvent100.{0}\n", attributes));
-//                else if (debugEvent is IDebugThreadDestroyEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugThreadDestroyEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugProgramDestroyEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugProgramDestroyEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugProcessDestroyEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugProcessDestroyEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugSessionDestroyEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugSessionDestroyEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugBreakpointErrorEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugBreakpointErrorEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugBreakpointBoundEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugBreakpointBoundEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugMessageEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugMessageEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugOutputStringEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugOutputStringEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugExceptionEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugExceptionEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugCurrentThreadChangedEvent100)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugCurrentThreadChangedEvent100.{0}\n", attributes));
-//                else if (debugEvent is IDebugBreakEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugBreakEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugBreakpointEvent2)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugBreakpointEvent2.{0}\n", attributes));
-//                else if (debugEvent is IDebugThreadSuspendChangeEvent100)
-//                    Output.WriteLine(String.Format("debugEvent is IDebugThreadSuspendChangeEvent100.{0}\n", attributes));
-//                else
-//                    Output.WriteLine(String.Format("Event Command.name = {0}.{1}\n", riidEvent.ToString("B"), attributes));
-
-//                Output.WriteLine(String.Format("engine = {0}; process = {1}; program = {2}; thread = {3}\n",
-//                    engine == null ? "NULL" : "YESS", process == null ? "NULL" : "YESS", program == null ? "NULL" : "YESS", thread == null ? "NULL" : "YESS"));
-//#endif
                 if (debugEvent is IDebugModuleLoadEvent2)
                 {
                     var a_Context1 = __GetModule(debugEvent as IDebugModuleLoadEvent2);
@@ -298,6 +245,7 @@ namespace service
                 service.Output.WriteError(ex.ToString());
             }
         }
+
         private static async Task __RemoveBraekpointAsync()
         {
             await Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -319,35 +267,28 @@ namespace service
             {
                 if (s_Module[0].m_bstrName.ToLower() == "kernel32.dll")
                 {
-                    var DllHandle = LoadLibraryA(s_Module[0].m_bstrName);
+                    Int64 a_Context1 = 0;
+                    var a_Context2 = false;
+                    if (s_Module[0].m_dwModuleFlags.HasFlag(enum_MODULE_FLAGS.MODULE_FLAG_64BIT))
                     {
-                        {
-                            Int64 a_Context1 = 0;
-                            var a_Context2 = false;
-                            if (s_Module[0].m_dwModuleFlags.HasFlag(enum_MODULE_FLAGS.MODULE_FLAG_64BIT))
-                            {
-                                a_Context2 = s_Addresses.TryGetValue("LoadLibraryA_x64", out a_Context1);
-                                a_Result += "\\console.proxy.cpp.x64.dll";
-                                //Output.WriteLineAsync("THIS IS x64\n");
-                            }
-                            else
-                            {
-                                a_Context2 = s_Addresses.TryGetValue("LoadLibraryA_x86", out a_Context1);
-                                a_Result += "\\console.proxy.cpp.dll";
-                                //Output.WriteLineAsync("THIS IS x86\n");
-                            }
-
-                            if (a_Context2)
-                            {
-                                a_Result = a_Result.Replace("\\", "\\\\");
-                                a_Result = "((int (__stdcall *)(const char*))0x" + a_Context1.ToString("X") + ")(\"" + a_Result + "\")";
-                            }
-                            else
-                            {
-                                a_Result = "";
-                            }
-                        }
+                        a_Context2 = s_Addresses.TryGetValue("LoadLibraryA_x64", out a_Context1);
+                        a_Result += "\\console.proxy.cpp.x64.dll";
                     }
+                    else
+                    {
+                        a_Context2 = s_Addresses.TryGetValue("LoadLibraryA_x86", out a_Context1);
+                        a_Result += "\\console.proxy.cpp.dll";
+                    }
+
+                    if (a_Context2)
+                    {
+                        a_Result = a_Result.Replace("\\", "\\\\");
+                        a_Result = "((int (__stdcall *)(const char*))0x" + a_Context1.ToString("X") + ")(\"" + a_Result + "\")";
+                    }
+                    else
+                    {
+                        a_Result = "";
+                    } 
                 }
                 else
                 {
