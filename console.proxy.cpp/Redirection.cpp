@@ -4,7 +4,7 @@
 #include <io.h>
 #include <stdio.h>
 #include <windows.h>
-#include <fcntl.h>s
+#include <fcntl.h>
 
 extern "C"
 {
