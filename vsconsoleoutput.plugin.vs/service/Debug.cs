@@ -94,10 +94,23 @@ namespace service
             try
             {
                 {
-                    var a_Context = new ProcessStartInfo("vsconsoleoutput.helper.exe");
-                    a_Context.WindowStyle = ProcessWindowStyle.Hidden;
-                    System.Diagnostics.Process.Start(a_Context);
-                    System.Threading.Thread.Sleep(500);
+                    var start = new ProcessStartInfo("cmd")
+                    {
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        WorkingDirectory = __GetPath() + "\\",
+                        Arguments = "/c vsconsoleoutput.helper",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                    };
+
+                    var stopwatch = Stopwatch.StartNew();
+
+                    using (var process = System.Diagnostics.Process.Start(start))
+                    {
+                        process.WaitForExit();
+                    }
+
+                    stopwatch.Stop();
                 }
                 s_Addresses = new Dictionary<string, Int64>();
                 {
@@ -267,28 +280,30 @@ namespace service
             {
                 if (s_Module[0].m_bstrName.ToLower() == "kernel32.dll")
                 {
-                    Int64 a_Context1 = 0;
-                    var a_Context2 = false;
                     if (s_Module[0].m_dwModuleFlags.HasFlag(enum_MODULE_FLAGS.MODULE_FLAG_64BIT))
                     {
-                        a_Context2 = s_Addresses.TryGetValue("LoadLibraryA_x64", out a_Context1);
-                        a_Result += "\\console.proxy.cpp.x64.dll";
+                        if (s_Addresses != null)
+                        {
+                            Int64 a_Context1;
+                            s_Addresses.TryGetValue("LoadLibraryA_x64", out a_Context1);
+                            a_Result += "\\console.proxy.cpp.x64.dll";
+                            a_Result = a_Result.Replace("\\", "\\\\");
+                            if (a_Context1 != 0)
+                            {
+                                a_Result = "((int (__stdcall *)(const char*))0x" + a_Context1.ToString("X") + ")(\"" + a_Result + "\")";
+                            }
+                        }
                     }
                     else
                     {
-                        a_Context2 = s_Addresses.TryGetValue("LoadLibraryA_x86", out a_Context1);
+                        var a_Context1 = GetProcAddress((IntPtr)(s_Module[0].m_addrLoadAddress), "LoadLibraryA");
                         a_Result += "\\console.proxy.cpp.dll";
-                    }
-
-                    if (a_Context2)
-                    {
                         a_Result = a_Result.Replace("\\", "\\\\");
-                        a_Result = "((int (__stdcall *)(const char*))0x" + a_Context1.ToString("X") + ")(\"" + a_Result + "\")";
+                        if (a_Context1 != null)
+                        {
+                            a_Result = "((int (__stdcall *)(const char*))0x" + a_Context1.ToString("X") + ")(\"" + a_Result + "\")";
+                        }
                     }
-                    else
-                    {
-                        a_Result = "";
-                    } 
                 }
                 else
                 {
@@ -310,7 +325,7 @@ namespace service
 
         private static string __GetFunctionName()
         {
-            return (s_Module != null) ? "" : "proxy.Redirection.Connect(" + s_ServerId + ")";
+            return (s_Module != null) ? "" : "proxy.Redirection.Connect(\"" + s_ServerId + "\")"; 
         }
 
         private static string __GetPath()
