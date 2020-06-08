@@ -1,7 +1,5 @@
-VsConsoleOutput
+# VsConsoleOutput
 
-Redirect console output into Visual Studio output window.
-
-This extension redirect output from Console to Output Window in Visual Studio
+Extention for Visual Studio which console output into Visual Studio output window.
 
 https://marketplace.visualstudio.com/items?itemName=NesviatypaskhaOleksii.VsConsoleOutput
