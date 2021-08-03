@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="VsConsoleOutput.753a2975-4e4c-4067-9e9d-d2d5b867ec23" Version="1.1.2" Language="en-US" Publisher="Nesviatypaskha Oleksii" />
+        <Identity Id="VsConsoleOutput.753a2975-4e4c-4067-9e9d-d2d5b867ec23" Version="1.1.4" Language="en-US" Publisher="Nesviatypaskha Oleksii" />
         <DisplayName>VsConsoleOutput</DisplayName>
         <Description xml:space="preserve">Redirect console output into Visual Studio output window.</Description>
         <MoreInfo>https://github.com/Nesviatypaskha/VsConsoleOutput</MoreInfo>
@@ -10,14 +10,35 @@
         <PreviewImage>resource\picture\preview.png</PreviewImage>
         <Tags>Console;Output;</Tags>
     </Metadata>
-    <Installation>
-        <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.Community" />
-        <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.Pro" />
-        <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.Enterprise" />
-        <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.IntegratedShell" />
-        <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.Ultimate" />
-        <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.Premium" />
-        <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.VSLS" />
+    <Installation AllUsers="true">
+      <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.Community"/>
+      <InstallationTarget Version="[17.0, 18.0)" Id="Microsoft.VisualStudio.Community">
+        <ProductArchitecture>amd64</ProductArchitecture>
+      </InstallationTarget>
+      <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.Pro"/>
+      <InstallationTarget Version="[17.0, 18.0)" Id="Microsoft.VisualStudio.Pro">
+        <ProductArchitecture>amd64</ProductArchitecture>
+      </InstallationTarget>
+      <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.Enterprise"/>
+      <InstallationTarget Version="[17.0, 18.0)" Id="Microsoft.VisualStudio.Enterprise">
+        <ProductArchitecture>amd64</ProductArchitecture>
+      </InstallationTarget>
+      <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.IntegratedShell"/>
+      <InstallationTarget Version="[17.0, 18.0)" Id="Microsoft.VisualStudio.IntegratedShell">
+        <ProductArchitecture>amd64</ProductArchitecture>
+      </InstallationTarget>
+      <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.Ultimate"/>
+      <InstallationTarget Version="[17.0, 18.0)" Id="Microsoft.VisualStudio.Ultimate">
+        <ProductArchitecture>amd64</ProductArchitecture>
+      </InstallationTarget>
+      <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.Premium"/>
+      <InstallationTarget Version="[17.0, 18.0)" Id="Microsoft.VisualStudio.Premium">
+        <ProductArchitecture>amd64</ProductArchitecture>
+      </InstallationTarget>
+      <InstallationTarget Version="[14.0, 17.0)" Id="Microsoft.VisualStudio.VSLS"/>
+      <InstallationTarget Version="[17.0, 18.0)" Id="Microsoft.VisualStudio.VSLS">
+        <ProductArchitecture>amd64</ProductArchitecture>
+      </InstallationTarget>
     </Installation>
     <Dependencies>
         <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />

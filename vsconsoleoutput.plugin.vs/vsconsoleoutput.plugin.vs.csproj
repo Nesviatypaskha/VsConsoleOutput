@@ -106,8 +106,12 @@
       <Project>{2f0173fd-0e34-44ec-9826-cc7bfd1345d9}</Project>
       <Name>console.proxy.cs</Name>
     </ProjectReference>
-    <ProjectReference Include="..\vsconsoleoutput.helper\vsconsoleoutput.helper.vcxproj">
+    <ProjectReference Include="..\vsconsoleoutput.helper64\vsconsoleoutput.helper64.vcxproj">
       <Project>{bef4372b-b968-436c-878c-70a43ec34cff}</Project>
+      <Name>vsconsoleoutput.helper64</Name>
+    </ProjectReference>
+	<ProjectReference Include="..\vsconsoleoutput.helper\vsconsoleoutput.helper.vcxproj">
+      <Project>{8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942}</Project>
       <Name>vsconsoleoutput.helper</Name>
     </ProjectReference>
   </ItemGroup>

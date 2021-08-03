@@ -33,8 +33,8 @@ int main()
             ::FreeLibrary(hModule);
         }
 
-        key.SetQwordValue(L"LoadLibraryA_x86", vLoadLibraryA);
-        key.SetQwordValue(L"GetProcAddress_x86", vGetProcAddress);
+        key.SetQwordValue(L"LoadLibraryA_x64", vLoadLibraryA);
+        key.SetQwordValue(L"GetProcAddress_x64", vGetProcAddress);
 
     }
     catch (const std::exception& e)

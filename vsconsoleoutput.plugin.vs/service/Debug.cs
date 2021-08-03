@@ -102,10 +102,21 @@ namespace service
                         UseShellExecute = false,
                         CreateNoWindow = true,
                     };
-
+                    var start64 = new ProcessStartInfo("cmd")
+                    {
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        WorkingDirectory = __GetPath() + "\\",
+                        Arguments = "/c vsconsoleoutput.helper64",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                    };
                     var stopwatch = Stopwatch.StartNew();
 
                     using (var process = System.Diagnostics.Process.Start(start))
+                    {
+                        process.WaitForExit();
+                    }
+                    using (var process = System.Diagnostics.Process.Start(start64))
                     {
                         process.WaitForExit();
                     }
@@ -113,18 +124,20 @@ namespace service
                     stopwatch.Stop();
                 }
                 s_Addresses = new Dictionary<string, Int64>();
-                {
-                    var a_Context = LoadLibraryA("kernel32.dll");
-                    if (a_Context != IntPtr.Zero)
-                    {
-                        s_Addresses.Add("LoadLibraryA_x86", GetProcAddress(a_Context, "LoadLibraryA").ToInt64());
-                        s_Addresses.Add("GetProcAddress_x86", GetProcAddress(a_Context, "GetProcAddress").ToInt64());
-                    }
-                }
+                //{
+                //    var a_Context = LoadLibraryA("kernel32.dll");
+                //    if (a_Context != IntPtr.Zero)
+                //    {
+                //        s_Addresses.Add("LoadLibraryA_x86", GetProcAddress(a_Context, "LoadLibraryA").ToInt64());
+                //        s_Addresses.Add("GetProcAddress_x86", GetProcAddress(a_Context, "GetProcAddress").ToInt64());
+                //    }
+                //}
                 {
                     var a_Context = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\VSConsoleOutput");
                     if (a_Context != null)
                     {
+                        s_Addresses.Add("LoadLibraryA_x86", (Int64)a_Context.GetValue("LoadLibraryA_x86"));
+                        s_Addresses.Add("GetProcAddress_x86", (Int64)a_Context.GetValue("GetProcAddress_x86"));
                         s_Addresses.Add("LoadLibraryA_x64", (Int64)a_Context.GetValue("LoadLibraryA_x64"));
                         s_Addresses.Add("GetProcAddress_x64", (Int64)a_Context.GetValue("GetProcAddress_x64"));
                         a_Context.Close();
@@ -296,14 +309,28 @@ namespace service
                     }
                     else
                     {
-                        var a_Context1 = GetProcAddress((IntPtr)(s_Module[0].m_addrLoadAddress), "LoadLibraryA");
-                        a_Result += "\\console.proxy.cpp.dll";
-                        a_Result = a_Result.Replace("\\", "\\\\");
-                        if (a_Context1 != null)
+                        if (s_Addresses != null)
                         {
-                            a_Result = "((int (__stdcall *)(const char*))0x" + a_Context1.ToString("X") + ")(\"" + a_Result + "\")";
+                            Int64 a_Context1;
+                            s_Addresses.TryGetValue("LoadLibraryA_x86", out a_Context1);
+                            a_Result += "\\console.proxy.cpp.dll";
+                            a_Result = a_Result.Replace("\\", "\\\\");
+                            if (a_Context1 != 0)
+                            {
+                                a_Result = "((int (__stdcall *)(const char*))0x" + a_Context1.ToString("X") + ")(\"" + a_Result + "\")";
+                            }
                         }
                     }
+                    //else
+                    //{
+                    //    var a_Context1 = GetProcAddress((IntPtr)(s_Module[0].m_addrLoadAddress), "LoadLibraryA");
+                    //    a_Result += "\\console.proxy.cpp.dll";
+                    //    a_Result = a_Result.Replace("\\", "\\\\");
+                    //    if (a_Context1 != null)
+                    //    {
+                    //        a_Result = "((int (__stdcall *)(const char*))0x" + a_Context1.ToString("X") + ")(\"" + a_Result + "\")";
+                    //    }
+                    //}
                 }
                 else
                 {

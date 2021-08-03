@@ -20,10 +20,10 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{4c4301b0-feb5-44d3-b26e-bd43a6cd30a4}</ProjectGuid>
-    <RootNamespace>vsconsoleoutputhelper32</RootNamespace>
+    <ProjectGuid>{BEF4372B-B968-436C-878C-70A43EC34CFF}</ProjectGuid>
+    <RootNamespace>vsconsoleoutput.helper64</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>vsconsoleoutput.helper</ProjectName>
+    <ProjectName>vsconsoleoutput.helper64</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -1,22 +1,25 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29409.12
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31521.260
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vsconsoleoutput.plugin.vs", "vsconsoleoutput.plugin.vs\vsconsoleoutput.plugin.vs.csproj", "{C025041D-E20E-46BF-8CBA-2C37F1BFF9FA}"
 	ProjectSection(ProjectDependencies) = postProject
 		{291D7F50-A08F-412B-BAB1-D5B4171FAC5F} = {291D7F50-A08F-412B-BAB1-D5B4171FAC5F}
 		{DD4B6477-DE37-4D52-B23B-4FBFC8E026B1} = {DD4B6477-DE37-4D52-B23B-4FBFC8E026B1}
 		{1DEB299D-5632-4847-B580-3CE1EE9E439A} = {1DEB299D-5632-4847-B580-3CE1EE9E439A}
+		{4C4301B0-FEB5-44D3-B26E-BD43A6CD30A4} = {4C4301B0-FEB5-44D3-B26E-BD43A6CD30A4}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "console.proxy.cpp", "console.proxy.cpp\console.proxy.cpp.vcxproj", "{DD4B6477-DE37-4D52-B23B-4FBFC8E026B1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "console.proxy.cs", "console.proxy.cs\console.proxy.cs.csproj", "{1DEB299D-5632-4847-B580-3CE1EE9E439A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vsconsoleoutput.helper", "vsconsoleoutput.helper\vsconsoleoutput.helper.vcxproj", "{BEF4372B-B968-436C-878C-70A43EC34CFF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vsconsoleoutput.helper64", "vsconsoleoutput.helper64\vsconsoleoutput.helper64.vcxproj", "{BEF4372B-B968-436C-878C-70A43EC34CFF}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "console.proxy.cpp.x64", "console.proxy.cpp.x64\console.proxy.cpp.x64.vcxproj", "{291D7F50-A08F-412B-BAB1-D5B4171FAC5F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vsconsoleoutput.helper", "vsconsoleoutput.helper\vsconsoleoutput.helper.vcxproj", "{4C4301B0-FEB5-44D3-B26E-BD43A6CD30A4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -88,6 +91,16 @@ Global
 		{291D7F50-A08F-412B-BAB1-D5B4171FAC5F}.Release|x64.Build.0 = Release|x64
 		{291D7F50-A08F-412B-BAB1-D5B4171FAC5F}.Release|x86.ActiveCfg = Release|x64
 		{291D7F50-A08F-412B-BAB1-D5B4171FAC5F}.Release|x86.Build.0 = Release|x64
+		{4C4301B0-FEB5-44D3-B26E-BD43A6CD30A4}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{4C4301B0-FEB5-44D3-B26E-BD43A6CD30A4}.Debug|x64.ActiveCfg = Debug|Win32
+		{4C4301B0-FEB5-44D3-B26E-BD43A6CD30A4}.Debug|x64.Build.0 = Debug|Win32
+		{4C4301B0-FEB5-44D3-B26E-BD43A6CD30A4}.Debug|x86.ActiveCfg = Debug|Win32
+		{4C4301B0-FEB5-44D3-B26E-BD43A6CD30A4}.Debug|x86.Build.0 = Debug|Win32
+		{4C4301B0-FEB5-44D3-B26E-BD43A6CD30A4}.Release|Any CPU.ActiveCfg = Release|Win32
+		{4C4301B0-FEB5-44D3-B26E-BD43A6CD30A4}.Release|x64.ActiveCfg = Release|Win32
+		{4C4301B0-FEB5-44D3-B26E-BD43A6CD30A4}.Release|x64.Build.0 = Release|Win32
+		{4C4301B0-FEB5-44D3-B26E-BD43A6CD30A4}.Release|x86.ActiveCfg = Release|Win32
+		{4C4301B0-FEB5-44D3-B26E-BD43A6CD30A4}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
