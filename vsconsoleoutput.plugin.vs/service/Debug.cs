@@ -124,14 +124,6 @@ namespace service
                     stopwatch.Stop();
                 }
                 s_Addresses = new Dictionary<string, Int64>();
-                //{
-                //    var a_Context = LoadLibraryA("kernel32.dll");
-                //    if (a_Context != IntPtr.Zero)
-                //    {
-                //        s_Addresses.Add("LoadLibraryA_x86", GetProcAddress(a_Context, "LoadLibraryA").ToInt64());
-                //        s_Addresses.Add("GetProcAddress_x86", GetProcAddress(a_Context, "GetProcAddress").ToInt64());
-                //    }
-                //}
                 {
                     var a_Context = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\VSConsoleOutput");
                     if (a_Context != null)

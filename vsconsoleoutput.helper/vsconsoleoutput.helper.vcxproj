@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{4c4301b0-feb5-44d3-b26e-bd43a6cd30a4}</ProjectGuid>
-    <RootNamespace>vsconsoleoutputhelper32</RootNamespace>
+    <RootNamespace>vsconsoleoutput.helper</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>vsconsoleoutput.helper</ProjectName>
   </PropertyGroup>

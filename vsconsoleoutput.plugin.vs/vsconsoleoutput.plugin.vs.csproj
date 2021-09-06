@@ -77,7 +77,17 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="16.0.202" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="16.10.31321.278" ExcludeAssets="runtime">
+      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Shell.15.0">
+      <Version>15.0.26606</Version>
+    </PackageReference>
+	<PackageReference Include="Microsoft.VSSDK.BuildTools">
+      <Version>17.0.2150-preview2</Version>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="resource\document\license.txt">
@@ -110,7 +120,7 @@
       <Project>{bef4372b-b968-436c-878c-70a43ec34cff}</Project>
       <Name>vsconsoleoutput.helper64</Name>
     </ProjectReference>
-	<ProjectReference Include="..\vsconsoleoutput.helper\vsconsoleoutput.helper.vcxproj">
+    <ProjectReference Include="..\vsconsoleoutput.helper\vsconsoleoutput.helper.vcxproj">
       <Project>{8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942}</Project>
       <Name>vsconsoleoutput.helper</Name>
     </ProjectReference>
