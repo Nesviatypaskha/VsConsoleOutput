@@ -15,79 +15,77 @@ extern "C"
     }
 }
 
-namespace proxy
+namespace proxy {
+
+class Redirection
 {
-    class Redirection
+public:
+    static void Connect()
     {
-    public:
-        static void Connect()
+        try
         {
-            try
+            s_Pipe = CreateFile(
+                TEXT("\\\\.\\pipe\\VsConsoleOutput"),
+                GENERIC_WRITE,
+                0,
+                NULL,
+                OPEN_ALWAYS,
+                FILE_FLAG_DELETE_ON_CLOSE | FILE_ATTRIBUTE_NOT_CONTENT_INDEXED,
+                NULL);
+
+            if (s_Pipe == INVALID_HANDLE_VALUE)
             {
-                s_Pipe = CreateFile(
-                    TEXT("\\\\.\\pipe\\VsConsoleOutput"),
-                    GENERIC_WRITE,
-                    0,
-                    NULL,
-                    OPEN_ALWAYS,
-                    FILE_FLAG_DELETE_ON_CLOSE | FILE_ATTRIBUTE_NOT_CONTENT_INDEXED,
-                    NULL);
-                if (s_Pipe != INVALID_HANDLE_VALUE)
-                {
-                    {
-                        std::cout << "Console redirected to Output Window in Visual Studio..." << std::endl;
-                    }
-                    {
-                        auto a_Context = _open_osfhandle((intptr_t)s_Pipe, _O_RDWR);
-                        if (a_Context != -1)
-                        {
-                            auto a_Context1 = _fdopen(a_Context, "w");
-                            if (a_Context1 != NULL)
-                            {
-                                if (_dup2(_fileno(a_Context1), 1) != 0)
-                                {
-                                    std::cerr << "ERROR: Console don't redirected correctly (Error code: " << errno << ")" << std::endl;
-                                }
-                                else
-                                {
-                                    setvbuf(stdout, NULL, _IONBF, 0);
-                                }
-                            }
-                            else
-                            {
-                                std::cerr << "ERROR: Console don't redirected because pipe not opened" << std::endl;
-                            }
-                        }
-                        else
-                        {
-                            std::cerr << "ERROR: Console don't redirected because handle not created" << std::endl;
-                        }
-                    }
-                }
-                else
-                {
-                    std::cerr << "ERROR : Console don't redirected because pipe not created" << std::endl;
-                }
+                std::cerr << "ERROR : Console don't redirected because pipe not created" << std::endl;
+                return;
             }
-            catch (std::exception& ex)
+
+            std::cout << "Console redirected to Output Window in Visual Studio..." << std::endl;
+
+            auto a_Context = _open_osfhandle(( intptr_t )s_Pipe, _O_RDWR);
+
+            if (a_Context == -1)
             {
-                std::cerr << "ERROR: " << ex.what() << std::endl;
+                std::cerr << "ERROR: Console don't redirected because handle not created" << std::endl;
+                return;
             }
+            auto a_Context1 = _fdopen(a_Context, "w");
+
+            if (a_Context1 == NULL)
+            {
+                std::cerr << "ERROR: Console don't redirected because pipe not opened" << std::endl;
+                return;
+            }
+
+            if (_dup2(_fileno(a_Context1), 1) != 0)
+            {
+                std::cerr << "ERROR: Console don't redirected correctly (Error code: " << errno << ")" << std::endl;
+                return;
+            }
+
+            setvbuf(stdout, NULL, _IONBF, 0);
         }
-    public:
-        static void Disconnect()
+        catch (std::exception& ex)
         {
-            if (s_Pipe != INVALID_HANDLE_VALUE)
-            {
-                CloseHandle(s_Pipe);
-            }
+            std::cerr << "ERROR: " << ex.what() << std::endl;
         }
-    private:
-        static HANDLE s_Pipe;
-    };
+    }
+public:
+    static void Disconnect()
+    {
+        if (s_Pipe != INVALID_HANDLE_VALUE)
+        {
+            CloseHandle(s_Pipe);
+        }
+    }
+private:
+    static HANDLE s_Pipe;
+};
+
 }
 
+
 HANDLE proxy::Redirection::s_Pipe = INVALID_HANDLE_VALUE;
+
 
 BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved)
 {
